@@ -11,6 +11,8 @@ export class MuseumMusic {
   private gains: GainNode[] = [];
   private sources: MediaElementAudioSourceNode[] = [];
   private level = .18;
+  private ambience = 1;
+  private breath?: AudioBufferSourceNode;
   private blend = 0;
   private ducked = false;
   private disposed = false;
@@ -58,9 +60,33 @@ export class MuseumMusic {
   setChapter(chapter: number) { this.setMix(chapter === 0 ? 0 : 1); }
   volume(value: number) { this.level = Math.max(0, Math.min(.6, value)); this.updateGains(); }
   duck(value: boolean) { this.ducked = value; this.updateGains(); }
+  atmosphere(value: number) { this.ambience = Math.max(0, Math.min(1, value)); this.updateGains(); }
+  beginWish(delay: number) {
+    this.setup();
+    const ctx = this.context!;
+    // Prime Web Audio directly in the tap gesture, including when music is paused.
+    void ctx.resume().catch(() => {});
+    this.endWish();
+    const duration = 1.65;
+    const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+    const channel = buffer.getChannelData(0); let low = 0;
+    for (let i = 0; i < channel.length; i++) { const white = Math.random() * 2 - 1; low = .96 * low + .04 * white; channel[i] = .55 * white + 2.2 * low; }
+    const source = ctx.createBufferSource(); source.buffer = buffer;
+    const filter = ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 1150; filter.Q.value = .48;
+    const gain = ctx.createGain(); const when = ctx.currentTime + delay;
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.setValueAtTime(0, when);
+    gain.gain.linearRampToValueAtTime(.32, when + .18);
+    gain.gain.linearRampToValueAtTime(.21, when + .75);
+    gain.gain.linearRampToValueAtTime(0, when + duration);
+    source.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+    source.onended = () => { source.disconnect(); filter.disconnect(); gain.disconnect(); if (this.breath === source) this.breath = undefined; };
+    this.breath = source; source.start(when); source.stop(when + duration);
+  }
+  endWish() { this.breath?.stop(); this.breath = undefined; this.atmosphere(1); }
   private updateGains(immediate = false) {
     if (!this.context) return;
-    const master = this.level * (this.ducked ? .12 : 1);
+    const master = this.level * this.ambience * (this.ducked ? .12 : 1);
     const values = [Math.cos(this.blend * Math.PI / 2), Math.sin(this.blend * Math.PI / 2)];
     this.gains.forEach((gain, i) => {
       const value = values[i] < 1e-6 ? 0 : values[i] * master;
@@ -70,7 +96,7 @@ export class MuseumMusic {
   }
   async stop() { this.generation++; this.tracks.forEach(audio => audio.pause()); await this.context?.suspend(); }
   dispose() {
-    this.disposed = true; this.generation++;
+    this.endWish(); this.disposed = true; this.generation++;
     this.tracks.forEach(audio => { audio.pause(); audio.removeAttribute('src'); audio.load(); });
     this.sources.forEach(source => source.disconnect()); this.gains.forEach(gain => gain.disconnect());
     void this.context?.close();

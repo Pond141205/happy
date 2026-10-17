@@ -161,3 +161,10 @@ No physical mobile-device test or deployed Supabase OAuth/RLS test was performed
 - 402×874 portrait and 874×402 landscape: no horizontal overflow; mobile branding hidden and tools collapsed into menu. Control rectangles total approximately 6.8% of portrait viewport.
 - 116 tests across 19 files passed; TypeScript/build/production asset guard and HTTP smoke of 123 assets passed.
 - Mobile rendering reductions and limitations are documented in PERFORMANCE_REPORT.md. Physical iPhone performance remains unverified.
+
+## 2026-10-18 — bilingual heading and wish ritual
+- Restored English room title, Thai description and chapter label on mobile; tools remain collapsed.
+- Added 9.6-second ritual: eyelids close, music fades to silence, Make a wish appears, synthesized breath plays at 4.8 seconds while candles extinguish, eyes reopen, then Just one thing opens.
+- Movement is blocked while the scene continues rendering candle animation. Music gain restores without restarting transports; reduced-motion mode uses opacity instead of moving lids.
+- Timeline and sound scheduling/cleanup tests added. 118 tests passed in full suite, followed by 4 targeted tests passing after the extra sound test (119 total tests). TypeScript, production build and 123-asset HTTP smoke passed before final reduced-motion style adjustment; final build rechecked.
+- Browser/iPhone visual and audible playback are not verified in this iteration.

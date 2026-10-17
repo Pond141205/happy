@@ -11,7 +11,8 @@ import { INITIAL_POSE, type CameraPose } from './controls/movement';
 import { NEUTRAL, type StickVector } from './controls/joystick';
 import { sceneLoading } from './sceneLoading';
 import SceneLoading from './SceneLoadingOverlay';
-import { BLOW_DURATION } from './rooms/candleAnimation';
+import WishRitual from './WishOverlay';
+import { WISH_BLOW_AT } from './wishRitual';
 
 const localPreview = import.meta.env.DEV;
 class SceneBoundary extends Component<{ children: ReactNode; onError: (reason?: string) => void }, { failed: boolean }> {
@@ -78,8 +79,7 @@ export default function App() {
   const [blowing, setBlowing] = useState(false);
   const [messageDialog, setMessageDialog] = useState<'closed' | 'ask' | 'letter'>('closed');
   const [privateExperience, setPrivateExperience] = useState<PrivateExperience | null>(null);
-  useEffect(() => { if (!blowing) return; const timer = setTimeout(() => { setBlowing(false); setMessageDialog('ask'); }, BLOW_DURATION * 1000); return () => clearTimeout(timer); }, [blowing]);
-  const blowCandles = () => { if (candleOut) return; setCandleOut(true); setBlowing(true); };
+
   const [musicOn, setMusicOn] = useState(false);
   const [audioError, setAudioError] = useState('');
   const [volume, setVolume] = useState(18);
@@ -87,9 +87,13 @@ export default function App() {
   const [reduced, setReduced] = useState(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const music = useRef<MuseumMusic | null>(null);
   const epoch = useRef(0);
+  const ritualGain = useCallback((gain: number) => music.current?.atmosphere(gain), []);
+  const ritualBlow = useCallback(() => setCandleOut(true), []);
+  const ritualComplete = useCallback(() => { music.current?.endWish(); setBlowing(false); setMessageDialog('ask'); }, []);
+  const blowCandles = () => { if (candleOut || blowing) return; joystick.current = { ...NEUTRAL }; setToolsOpen(false); music.current?.beginWish(WISH_BLOW_AT); setBlowing(true); };
   const goChapter = (i: number) => { if (album || failed3D) setChapter(Math.max(0, Math.min(1, i))); };
   const clear = () => {
-    setToolsOpen(false); clearPrivateMedia(); sceneLoading.start(); setAlbum(false); setFailed3D(false); setSceneError(''); setAudioError(''); setBusy(false); wants3D.current = true;
+    music.current?.endWish(); setToolsOpen(false); clearPrivateMedia(); sceneLoading.start(); setAlbum(false); setFailed3D(false); setSceneError(''); setAudioError(''); setBusy(false); wants3D.current = true;
     epoch.current++; setStage('birthday'); setContent(sample); setMemory(null);  setHelp(false); joystick.current = { ...NEUTRAL };  setCode(''); setCandleOut(false); setBlowing(false); setMessageDialog('closed'); setPrivateExperience(null); setChapter(0); cameraPose.current = { ...INITIAL_POSE }; joystick.current = { ...NEUTRAL }; setMusicOn(false); void music.current?.stop();
   };
   useEffect(() => {
@@ -135,11 +139,11 @@ export default function App() {
       setAlbum(false);
     } else { wants3D.current = false; setAlbum(true); }
   };
-  const paused = !!memory || help || messageDialog !== 'closed' || hidden || showAlbum || !sceneReady;
+  const paused = blowing || !!memory || help || messageDialog !== 'closed' || hidden || showAlbum || !sceneReady;
   const onPlaying = useRef((playing: boolean) => music.current?.duck(playing)).current;
 
   return <main data-scene-error={localPreview ? sceneError : undefined} className={`app ${entered ? 'entered' : 'at-door'} ${showAlbum && entered ? 'album-mode' : ''} ${toolsOpen ? 'mobile-tools-open' : ''}`}>
-    {entered && !showAlbum && <div className="scene" aria-label="พิพิธภัณฑ์สามมิติ"><SceneBoundary key={sceneVersion} onError={handleSceneError}><Suspense fallback={null}><Gallery content={content} entered={entered} chapter={chapter} pose={cameraPose} stick={joystick} paused={paused} preparing={!sceneReady} loadingId={loadingId} reduced={reduced} candleOut={candleOut} lookReset={lookReset} onChapter={setChapter} onAudioMix={mix => music.current?.setMix(mix)} onMemory={setMemory} onError={handleSceneError} /></Suspense></SceneBoundary></div>}
+    {entered && !showAlbum && <div className="scene" aria-label="พิพิธภัณฑ์สามมิติ"><SceneBoundary key={sceneVersion} onError={handleSceneError}><Suspense fallback={null}><Gallery content={content} entered={entered} chapter={chapter} pose={cameraPose} stick={joystick} paused={paused} ritualActive={blowing} preparing={!sceneReady} loadingId={loadingId} reduced={reduced} candleOut={candleOut} lookReset={lookReset} onChapter={setChapter} onAudioMix={mix => music.current?.setMix(mix)} onMemory={setMemory} onError={handleSceneError} /></Suspense></SceneBoundary></div>}
     {entered && !showAlbum && !sceneReady && <SceneLoading key={loadingId} state={loading} onAlbum={() => { joystick.current = { ...NEUTRAL }; wants3D.current = false; setAlbum(true); }} />}
     <div className="scene-shade" />
     <header className="topbar"><a className="brand" href="#" onClick={e => { e.preventDefault(); if (entered) goChapter(0); }}><Monogram /><span>THE MUSEUM <i>of</i> US</span></a><div className="top-actions">{demo && <span className="preview-badge">ตัวอย่างในเครื่อง</span>}<span className="private-label"><LockKeyhole size={13} /> A PRIVATE EXHIBITION</span>{entered && <button className="icon-button" onClick={() => void logout()} aria-label="ออกจากระบบ"><LogOut size={18} /></button>}</div></header>
@@ -162,7 +166,7 @@ export default function App() {
       <footer className="entrance-footer"><span>HAPPY BIRTHDAY & WELCOME HOME</span><span><Heart size={13} /> WITH LOVE, ALWAYS.</span></footer>
     </> : <>
       {showAlbum ? <section className="album"><span className="eyebrow">CHAPTER {String(chapter + 1).padStart(2, '0')} / 02</span><h1 className="serif">{current.english}</h1><p>{current.subtitle}</p>{failed3D && <p className="sample-note" data-scene-error={localPreview ? sceneError : undefined}>ฉาก 3D หยุดทำงานชั่วคราว กด “ลองเปิด 3D อีกครั้ง” เพื่อกลับเข้าห้องได้</p>}<div className="album-grid">{current.memories.map((m, i) => <AlbumCard key={m.id} memory={m} number={chapter * 2 + i + 1} onClick={() => setMemory(m)} />)}</div></section> : <section className="chapter-heading"><span className="eyebrow">CHAPTER {String(chapter + 1).padStart(2, '0')} / 02</span><h1 className="serif">{current.english}</h1><p>{current.subtitle}</p></section>}
-      {chapter === 1 && <section className={`finale birthday-controls ${showAlbum ? 'finale-album' : ''}`}><span className="eyebrow">YOU ARE MY FAVOURITE CHAPTER</span><h2>Happy birthday,<br /><em>my love.</em></h2><p>{blowing ? 'กำลังเป่าเทียน…' : candleOut ? 'ขอให้ทุกคำอธิษฐานของเทอเป็นจริง' : 'หลับตา อธิษฐาน แล้วเป่าเทียนด้วยกันนะ'}</p><button className="primary-button" disabled={candleOut} onClick={blowCandles}>{blowing ? <>กำลังเป่าเทียน…</> : candleOut ? <><Heart size={18} /> ขอให้คำอธิษฐานเป็นจริง</> : <><Flame size={18} /> อธิษฐานและเป่าเทียน</>}</button>{candleOut && !blowing && <button className="text-button last-message-trigger" onClick={() => setMessageDialog('ask')}>Just one thing</button>}{candleOut && !blowing && <span className="wish-note"><Heart size={15} /> Welcome home. You were always worth the wait.</span>}</section>}
+      {chapter === 1 && <section className={`finale birthday-controls ${showAlbum ? 'finale-album' : ''}`}><span className="eyebrow">YOU ARE MY FAVOURITE CHAPTER</span><h2>Happy birthday,<br /><em>my love.</em></h2><p>{blowing ? 'กำลังเป่าเทียน…' : candleOut ? 'ขอให้ทุกคำอธิษฐานของเทอเป็นจริง' : 'หลับตา อธิษฐาน แล้วเป่าเทียนด้วยกันนะ'}</p><button className="primary-button" disabled={candleOut || blowing} onClick={blowCandles}>{blowing ? <>กำลังเป่าเทียน…</> : candleOut ? <><Heart size={18} /> ขอให้คำอธิษฐานเป็นจริง</> : <><Flame size={18} /> อธิษฐานและเป่าเทียน</>}</button>{candleOut && !blowing && <button className="text-button last-message-trigger" onClick={() => setMessageDialog('ask')}>Just one thing</button>}{candleOut && !blowing && <span className="wish-note"><Heart size={15} /> Welcome home. You were always worth the wait.</span>}</section>}
       {!showAlbum && chapter === 0 && <aside className="room1-intro"><p>{ROOM1.intro}</p></aside>}
       {!showAlbum && chapter === 0 && <details className="memory-tray"><summary><span className="eyebrow">EXPLORE THE MEMORIES</span><span>ความทรงจำในห้องนี้</span></summary>{current.memories.map((m, i) => <button key={m.id} onClick={() => setMemory(m)}><span className="memory-index">{String(i + 1).padStart(2, '0')}</span>{m.kind === 'video' ? <Play size={15} /> : <Maximize2 size={15} />}</button>)}<small className="sample-art-note">32 ภาพความทรงจำ · กดที่กรอบเพื่อดูรูปเต็ม</small></details>}
       <button className="mobile-menu-toggle icon-button" aria-label="เมนู" aria-expanded={toolsOpen} onClick={() => setToolsOpen(v => !v)}>•••</button>
@@ -173,7 +177,7 @@ export default function App() {
     </>}
     {entered && !showAlbum && <Joystick disabled={paused} onChange={value => { joystick.current = value; }} />}
     {memory && <MemoryDetail memory={memory} onClose={() => setMemory(null)} onPlaying={onPlaying} />}
-    {blowing && <div className="blow-animation" role="status" aria-label="กำลังเป่าเทียน"><span /><span /><span /></div>}
+    {blowing && <WishRitual reduced={reduced} onFrame={ritualGain} onBlow={ritualBlow} onComplete={ritualComplete} />}
     {messageDialog === 'ask' && <Dialog title="Just one thing" onClose={() => setMessageDialog('closed')} className="last-message-dialog"><div className="message-invitation"><h2>Just one thing</h2><p>มีข้อความสุดท้ายถึงเทอ อยากเปิดอ่านไหม?</p><button className="primary-button" onClick={() => setMessageDialog('letter')}>เปิดอ่านข้อความ <ArrowRight size={18} /></button><button className="text-button" onClick={() => setMessageDialog('closed')}>ยังไม่เปิด</button></div></Dialog>}
     {messageDialog === 'letter' && <Dialog title="Just one thing" onClose={() => setMessageDialog('closed')} className="last-message-dialog"><article className="last-message-letter"><h2>Just one thing</h2>{privateExperience?.message.split(/\n\s*\n/).map((paragraph, i) => <p key={i}>{paragraph}</p>)}</article></Dialog>}
     {help && <Dialog title="วิธีเดินชม" onClose={() => setHelp(false)}><div className="help-content"><span className="eyebrow">TAKE YOUR TIME</span><h2>เดินช้า ๆ ก็ได้นะ</h2><p>ที่นี่ไม่มีเวลาปิด ทุกความทรงจำรอเทออยู่</p><dl><dt>มองรอบห้อง</dt><dd>ลากเมาส์หรือลากนิ้วบนฉาก</dd><dt>เดินไปข้างหน้า</dt><dd>ลากจอยขึ้นเพื่อเดินหน้า ลากลงเพื่อถอยหลัง ลากซ้าย–ขวาเพื่อเดินด้านข้าง ปล่อยเพื่อหยุด</dd><dt>ดูความทรงจำ</dt><dd>แตะกรอบรูป หรือชื่อรูปทางด้านข้าง</dd><dt>ไปห้องถัดไป</dt><dd>ใช้จอยเดินผ่านประตู หมายเลขด้านล่างบอกห้องที่กำลังอยู่</dd><dt>นั่งดูสบาย ๆ</dt><dd>เลือกดูแบบอัลบั้ม แล้วกดกลับห้อง 3D เพื่อกลับมาที่เดิม</dd></dl><button className="primary-button" onClick={() => setHelp(false)}>พร้อมแล้ว <Check size={18} /></button></div></Dialog>}

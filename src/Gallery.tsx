@@ -15,7 +15,7 @@ import type { StickVector } from './controls/joystick';
 import RenderBudget from './RenderBudget';
 import { sceneLoading, SceneWarmupGate } from './sceneLoading';
 
-type Props = { content: Exhibition; pose: RefObject<CameraPose>; stick: RefObject<StickVector>; entered: boolean; chapter: number; paused: boolean; preparing?: boolean; loadingId?: number; reduced: boolean; candleOut: boolean; lookReset: number; onChapter: (i: number) => void; onAudioMix: (mix: number) => void; onMemory: (m: Memory) => void; onError: (reason?: string) => void };
+type Props = { content: Exhibition; pose: RefObject<CameraPose>; stick: RefObject<StickVector>; entered: boolean; chapter: number; paused: boolean; ritualActive?: boolean; preparing?: boolean; loadingId?: number; reduced: boolean; candleOut: boolean; lookReset: number; onChapter: (i: number) => void; onAudioMix: (mix: number) => void; onMemory: (m: Memory) => void; onError: (reason?: string) => void };
 
 function Block({ position, size, color, metalness = 0 }: { position: [number, number, number]; size: [number, number, number]; color: string; metalness?: number }) {
   return <mesh position={position} userData={{ batchable: true }}><boxGeometry args={size} /><meshStandardMaterial color={color} roughness={0.75} metalness={metalness} /></mesh>;
@@ -141,7 +141,7 @@ function Scene(props: Props) {
   const reflectionsReady = useCallback(() => setProbeReady(true), []);
   return <>
     <ContextEvents onError={props.onError} />
-    <RenderBudget active={props.entered && !props.paused} />
+    <RenderBudget active={props.entered && (!props.paused || !!props.ritualActive)} />
     <SurfaceReflections />
     <color attach="background" args={['#aebbb5']} /><fog attach="fog" args={['#a3b2aa', 45, 280]} />
     <ambientLight intensity={0.4} /><hemisphereLight args={['#f4e7cf', '#534d3b', .85]} />
@@ -195,5 +195,5 @@ export default function Gallery(props: Props) {
   const [initialPose] = useState(() => ({ ...props.pose.current }));
   const cameraOptions = useMemo(() => ({ position: [props.entered ? initialPose.x : 0, props.entered ? 1.72 : 2, props.entered ? initialPose.z : 7.6] as [number, number, number], rotation: [initialPose.pitch, initialPose.yaw, 0] as [number, number, number], fov: 62, near: .1, far: 480 }), [initialPose]);
   if (!mountCanvas) return null;
-  return <Canvas shadows frameloop={props.preparing || (props.entered && !props.paused) ? 'always' : 'demand'} dpr={[1, 1.5]} camera={cameraOptions} gl={{ antialias: true, powerPreference: 'high-performance' }} fallback={<div className="canvas-fallback">เบราว์เซอร์นี้ไม่รองรับฉาก 3D กรุณาเลือกดูแบบอัลบั้ม</div>}><Scene {...props} /></Canvas>;
+  return <Canvas shadows frameloop={props.preparing || (props.entered && (!props.paused || props.ritualActive)) ? 'always' : 'demand'} dpr={[1, 1.5]} camera={cameraOptions} gl={{ antialias: true, powerPreference: 'high-performance' }} fallback={<div className="canvas-fallback">เบราว์เซอร์นี้ไม่รองรับฉาก 3D กรุณาเลือกดูแบบอัลบั้ม</div>}><Scene {...props} /></Canvas>;
 }

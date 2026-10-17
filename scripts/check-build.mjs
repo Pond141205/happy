@@ -15,6 +15,10 @@ assert(!scripts.join('').includes('Dome corners'), 'Development geometry harness
 assert(!(await readdir('dist')).includes('scripts'), 'Do not publish development scripts as site pages');
 assert(!(await readdir('dist')).includes('private-media'), 'Personal photos must never be copied into the public build');
 assert(!scripts.join('').includes('__local-media'), 'Local photo access must be removed from production');
+assert(!scripts.join('').includes('__local-experience'), 'Local private experience access must not ship');
+assert(!scripts.join('').includes('เข้าสู่ระบบด้วย Google'), 'Google login UI must be removed');
+const envelope = JSON.parse(await readFile('dist/experience.enc.json', 'utf8'));
+assert(envelope.version === 1 && typeof envelope.ciphertext === 'string' && !('message' in envelope) && !('birthday' in envelope), 'Publish encrypted message only');
 assert(!files.some(f => f.endsWith('.map')), 'No production source maps');
 assert(!/VITE_.*SERVICE_ROLE/.test(scripts.join('')), 'Never bundle service credentials');
 console.log(`Production checks passed below ${base}: CSP retained, demo entry removed, no source maps.`);

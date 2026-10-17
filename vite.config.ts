@@ -11,6 +11,11 @@ export default defineConfig(({ mode }) => {
       // Production retains the restrictive policy from index.html.
       transformIndexHtml: html => html.replace(/\s*<meta http-equiv="Content-Security-Policy"[^>]*>/, ''),
       configureServer(server) {
+        server.middlewares.use('/__local-experience', async (req, res) => {
+          if ((req.url !== '/' && req.url !== '') || req.method !== 'GET') { res.statusCode = 404; res.end(); return; }
+          try { const data = await readFile(resolve('private-media/experience.enc.json')); res.setHeader('Content-Type', 'application/json'); res.setHeader('Cache-Control', 'no-store'); res.end(data); }
+          catch { res.statusCode = 404; res.end(); }
+        });
         server.middlewares.use('/__local-media', async (req, res) => {
           const match = /^\/gallery\/(thumb|full)\/(\d{2})\.webp$/.exec(req.url || '');
           if (!match || !['GET', 'HEAD'].includes(req.method || '')) { res.statusCode = 404; res.end(); return; }

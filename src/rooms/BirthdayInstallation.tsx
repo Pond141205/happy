@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { usePrivateMedia } from '../media';
 import { BIRTHDAY } from './layout';
 import BadtzTopper from './BadtzTopper';
+import AnimatedCandle from './AnimatedCandle';
 import { LeafCloud } from './architecture';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 function Grass() {
@@ -58,10 +59,10 @@ function Decoration({ path }: { path: string }) {
 }
 function CakeDisplay({ decorationPath, reduced, out }: { decorationPath?: string; reduced: boolean; out: boolean }) {
   const light = useRef<THREE.PointLight>(null), ring = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame(({ camera, clock }) => {
+  useFrame(({ camera, clock }, delta) => {
     const distance = Math.hypot(camera.position.x, camera.position.z - BIRTHDAY.centerZ);
     if (ring.current) ring.current.emissiveIntensity = THREE.MathUtils.damp(ring.current.emissiveIntensity, distance < 3.5 ? .32 : .05, 2, .016);
-    if (light.current) light.current.intensity = out ? 0 : reduced ? .6 : .6 + Math.sin(clock.elapsedTime * 3) * .06;
+    if (light.current) light.current.intensity = THREE.MathUtils.damp(light.current.intensity, out ? 0 : reduced ? .6 : .6 + Math.sin(clock.elapsedTime * 3) * .06, out ? 3 : 10, delta);
   });
   return <group>
     <mesh position={[0, .57, 0]} castShadow receiveShadow><cylinderGeometry args={[.68, .78, 1.02, 64]} /><meshStandardMaterial color="#d2cbb6" roughness={.6} /></mesh>
@@ -75,7 +76,7 @@ function CakeDisplay({ decorationPath, reduced, out }: { decorationPath?: string
     <mesh position={[0, 2.147, 0]}><cylinderGeometry args={[.43, .43, .025, 64]} /><meshStandardMaterial color="#eee3cc" /></mesh>
     {Array.from({ length: 24 }, (_, i) => { const a = i / 24 * Math.PI * 2; return <mesh key={i} position={[Math.sin(a) * .63, 1.37, Math.cos(a) * .63]}><sphereGeometry args={[.018, 8, 6]} /><meshStandardMaterial color="#c1a468" metalness={.25} /></mesh>; })}
     {decorationPath ? <Decoration path={decorationPath} /> : <BadtzTopper />}
-    {[-1, 1].map(side => <group key={side} position={[side * .49, 1.76, .15]}><mesh position={[0, .18, 0]}><cylinderGeometry args={[.014, .014, .36, 10]} /><meshStandardMaterial color="#bca471" /></mesh>{!out && <mesh position={[0, .39, 0]} scale={[1, 1.7, 1]}><sphereGeometry args={[.023, 10, 8]} /><meshBasicMaterial color="#ffda94" /></mesh>}</group>)}
+    {[-1, 1].map(side => <AnimatedCandle key={side} side={side} out={out} reduced={reduced} />)}
     <pointLight ref={light} position={[0, 2.25, .4]} intensity={.35} color="#ffd391" distance={4} />
   </group>;
 }

@@ -1,3 +1,13 @@
+# Current entry and ending flow
+
+The active entrance is birthday-only; Google sign-in has been removed from the app. Six- or eight-digit codes unlock an AES-256-GCM envelope using PBKDF2-SHA256 (310,000 rounds). The code and plaintext letter stay in ignored private-media/experience.json. public/experience.enc.json contains only ciphertext, salt and IV. Birthday codes are guessable; this is not equivalent to account authentication. Personal photos remain local and are not included in public hosting.
+
+To change the code or letter: edit private-media/experience.json, run node scripts/prepare-experience.mjs for localhost, then node scripts/prepare-experience.mjs --publish for the encrypted production asset. Never commit the private input file.
+
+Blowing the candles bends/shrinks the flames, fades their light and releases low-cost smoke puffs over three seconds. Reduced-motion mode uses a short fade. After that, My last massage asks whether to open the letter. Declining closes the invitation; its button remains available to open it later. The letter scrolls and contains the supplied wording unchanged. Logout resets this state.
+
+The Supabase setup notes below describe the older account-based architecture and are not the current entry flow.
+
 # The Museum of Us
 
 พิพิธภัณฑ์ความทรงจำ 3D สำหรับ Happy Birthday + Welcome Home สร้างด้วย React, TypeScript, Three.js / React Three Fiber และ Supabase พร้อมเผยแพร่ frontend บน GitHub Pages

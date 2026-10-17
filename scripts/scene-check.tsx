@@ -19,9 +19,10 @@ const views: Record<string, CameraPose> = {
 function Check() {
   const [view, setView] = useState('Dome corners');
   const [phone, setPhone] = useState(false);
+  const [candleOut, setCandleOut] = useState(false);
   const pose = { current: { ...views[view] } };
   const stick = { current: { x: 0, y: 0 } };
-  return <><div style={{ position: 'fixed', left: 0, top: 0, width: phone ? 402 : '100vw', height: phone ? 874 : '100vh', maxWidth: '100vw', maxHeight: '100vh' }}><Gallery key={view} content={sample} entered chapter={views[view].z < -12 ? 1 : 0} pose={pose} stick={stick} paused={false} reduced candleOut={false} lookReset={0} onChapter={() => {}} onAudioMix={() => {}} onMemory={() => {}} onError={reason => console.error(reason)} /></div><nav style={{ position: 'fixed', left: 16, top: 16, display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: 'calc(100vw - 32px)' }}>{Object.keys(views).map(name => <button key={name} onClick={() => setView(name)} style={{ padding: 12 }}>{name}</button>)}<button style={{ padding: 12 }} onClick={() => setPhone(!phone)}>{phone ? 'Full canvas' : 'Phone canvas'}</button></nav></>;
+  return <><div style={{ position: 'fixed', left: 0, top: 0, width: phone ? 402 : '100vw', height: phone ? 874 : '100vh', maxWidth: '100vw', maxHeight: '100vh' }}><Gallery key={view} content={sample} entered chapter={views[view].z < -12 ? 1 : 0} pose={pose} stick={stick} paused={false} reduced={false} candleOut={candleOut} lookReset={0} onChapter={() => {}} onAudioMix={() => {}} onMemory={() => {}} onError={reason => console.error(reason)} /></div><nav style={{ position: 'fixed', left: 16, top: 16, display: 'flex', flexWrap: 'wrap', gap: 8, maxWidth: 'calc(100vw - 32px)' }}>{Object.keys(views).map(name => <button key={name} onClick={() => setView(name)} style={{ padding: 12 }}>{name}</button>)}<button style={{ padding: 12 }} onClick={() => setPhone(!phone)}>{phone ? 'Full canvas' : 'Phone canvas'}</button><button style={{ padding: 12 }} onClick={() => setCandleOut(!candleOut)}>{candleOut ? 'จุดเทียนใหม่' : 'เป่าเทียน'}</button></nav></>;
 }
 if (import.meta.env.DEV) {
   const root = import.meta.hot?.data.root ?? createRoot(document.getElementById('root')!);

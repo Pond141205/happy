@@ -2,7 +2,7 @@
 
 ## Layered forest update
 
-`forest-ridges.webp`: built-in image generation mode, 2026-10-18. Three transparent ridge cutouts were cropped into equal 1536×256 tiles and assembled as a 1536×768 RGBA atlas (384,028 bytes; about 6 MiB decoded with mipmaps). Top/middle/bottom tiles supply the far/middle/near ridges. Three stationary cylindrical layers at 195/125/76 metres provide relative parallax, using three repeats and the actual 6:1 tile aspect. They do not cast shadows. They are distant scenery, not walkable forest.
+`forest-ridges.webp`: built-in image generation mode, 2026-10-18. Three transparent ridge cutouts were cropped into equal 1536×256 tiles and assembled as a 1536×768 RGBA atlas (384,028 bytes; about 6 MiB decoded with mipmaps). Top/middle/bottom tiles supply the far/middle/near ridges. Three stationary cylindrical layers at 195/125/90 metres provide relative parallax, using three repeats and the actual 6:1 tile aspect. They do not cast shadows. They are distant scenery, not walkable forest.
 
 The mountain photo now repeats over four 90° sectors with a matching 45° vertical field, replacing the old distorted vertical UV remap. The source is artistic scenery, not a true measured 360° capture; repeated sectors are intentional.
 

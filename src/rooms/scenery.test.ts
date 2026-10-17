@@ -8,7 +8,10 @@ describe('Photographic distant scenery', () => {
   it('preserves the source aspect in angular space and overlaps three parallax depths', () => {
     // 90° per photo horizontally, 45° vertically for a 2:1 source.
     expect(panoramaV(.1) - panoramaV(0)).toBeCloseTo(.1 / (Math.PI / 4));
-    expect(FOREST_LAYERS.map(l => l.radius)).toEqual([76, 125, 195]);
+    expect(FOREST_LAYERS.map(l => l.radius)).toEqual([90, 125, 195]);
+    // Room 1 extends to local z=76 in the forest group at world z=-20.
+    // A scenery ring inside this radius cuts through the solid entrance wall.
+    expect(Math.min(...FOREST_LAYERS.map(l => l.radius))).toBeGreaterThan(Math.hypot(76, 5.2) + 2);
     const atlas = readFileSync('public/images/environment/forest-ridges.webp');
     expect(atlas.toString('ascii', 8, 12)).toBe('WEBP'); expect(atlas.length).toBeLessThan(500000);
     for (const layer of FOREST_LAYERS) {

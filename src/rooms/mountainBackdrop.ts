@@ -3,7 +3,7 @@ import * as THREE from 'three';
 export const MOUNTAIN_SECTORS = 4;
 export function panoramaV(elevation: number) { return THREE.MathUtils.clamp(.38 + elevation / (Math.PI / 4), 0, 1); }
 export const FOREST_LAYERS = [
-  { radius: 76, bottom: -13, row: 2, tint: '#c2cbb5' },
+  { radius: 90, bottom: -13, row: 2, tint: '#c2cbb5' },
   { radius: 125, bottom: -22, row: 1, tint: '#becbc4' },
   { radius: 195, bottom: -37, row: 0, tint: '#c8d1d3' },
 ] as const;

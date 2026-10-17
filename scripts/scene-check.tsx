@@ -8,7 +8,7 @@ import type { CameraPose } from '../src/controls/movement';
 const views: Record<string, CameraPose> = {
   'Dome corners': { x: 0, z: -16, yaw: -.65, pitch: .55 },
   'Back roof seam': { x: 0, z: -23, yaw: 0, pitch: .5 },
-  'Closed entrance': { x: 0, z: 3, yaw: Math.PI, pitch: .05 },
+  'Closed entrance': { x: 0, z: 48, yaw: Math.PI, pitch: .05 },
   'Connecting passage': { x: 0, z: -5, yaw: 0, pitch: .1 },
   'Forest through glass': { x: 0, z: -23, yaw: 1.05, pitch: .12 },
   'Mountain window': { x: 0, z: -23, yaw: 0, pitch: .1 },

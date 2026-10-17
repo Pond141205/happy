@@ -20,29 +20,8 @@ type Props = { content: Exhibition; pose: RefObject<CameraPose>; stick: RefObjec
 function Block({ position, size, color, metalness = 0 }: { position: [number, number, number]; size: [number, number, number]; color: string; metalness?: number }) {
   return <mesh position={position}><boxGeometry args={size} /><meshStandardMaterial color={color} roughness={0.75} metalness={metalness} /></mesh>;
 }
-function textTexture(text: string, sub: string, color: string, dark = false) {
-  const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 192;
-  const ctx = canvas.getContext('2d')!; ctx.scale(.25, .25);
-  ctx.fillStyle = dark ? '#243638' : '#e6dfd1'; ctx.fillRect(0, 0, 1024, 768);
-  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.strokeRect(48, 48, 928, 672);
-  ctx.globalAlpha = 0.45; ctx.beginPath(); ctx.arc(512, 340, 126, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
-  ctx.textAlign = 'center'; ctx.fillStyle = color; ctx.font = 'italic 88px Georgia'; ctx.fillText(text, 512, 370, 850);
-  ctx.font = '20px sans-serif'; ctx.fillText(sub, 512, 574, 830);
-  const t = new THREE.CanvasTexture(canvas); t.colorSpace = THREE.SRGBColorSpace; return t;
-}
-
-function Frame({ memory, number, color, position, rotation, enabled, onMemory }: { memory: Memory; number: number; color: string; position: [number, number, number]; rotation: number; enabled: boolean; onMemory: Props['onMemory'] }) {
+function Frame({ memory, number, position, rotation, enabled, onMemory }: { memory: Memory; number: number; position: [number, number, number]; rotation: number; enabled: boolean; onMemory: Props['onMemory'] }) {
   const [hovered, setHovered] = useState(false);
-  const plaque = useMemo(() => {
-    const canvas = document.createElement('canvas'); canvas.width = 384; canvas.height = 72;
-    const ctx = canvas.getContext('2d')!; ctx.scale(.5, .5); ctx.fillStyle = '#ece6d5'; ctx.fillRect(0, 0, 768, 144);
-    ctx.fillStyle = '#4c493e'; ctx.textAlign = 'center'; ctx.font = '28px "Noto Sans Thai", sans-serif'; ctx.fillText(memory.title, 384, 62, 710);
-    ctx.font = '16px sans-serif'; ctx.fillText(memory.date, 384, 104, 710);
-    const t = new THREE.CanvasTexture(canvas); t.colorSpace = THREE.SRGBColorSpace; return t;
-  }, [memory.title, memory.date]);
-  useEffect(() => () => plaque.dispose(), [plaque]);
-  const fallback = useMemo(() => textTexture(String(number).padStart(2, '0'), memory.kind === 'video' ? 'A MOMENT IN MOTION' : 'A MEMORY BELONGS HERE', color), [number, memory.kind, color]);
-  useEffect(() => () => fallback.dispose(), [fallback]);
   const mediaPath = memory.kind === 'photo' ? memory.path : memory.posterPath;
   const frameRef = useRef<THREE.Group>(null), worldPosition = useMemo(() => new THREE.Vector3(), []);
   const [nearby, setNearby] = useState(false);
@@ -69,9 +48,8 @@ function Frame({ memory, number, color, position, rotation, enabled, onMemory }:
     <Block position={[0, 0, 0.045]} size={[2.28, 2.98, 0.04]} color="#bb9b61" metalness={0.65} />
     <Block position={[0, 0, 0.068]} size={[2.16, 2.86, 0.025]} color="#e2d6bc" />
     <mesh position={[0, 0, 0.092]} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)} onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); if (enabled && e.delta < 6) onMemory(memory); }}>
-      <planeGeometry args={photo ? [artWidth, artHeight] : [2.04, 2.72]} /><meshStandardMaterial map={photo || fallback} roughness={0.8} emissive="#bda36a" emissiveIntensity={hovered && enabled ? .12 : .015} />
+      <planeGeometry args={photo ? [artWidth, artHeight] : [2.04, 2.72]} /><meshStandardMaterial map={photo} color={photo ? '#ffffff' : '#e2d6bc'} roughness={0.8} emissive="#bda36a" emissiveIntensity={hovered && enabled ? .12 : .015} />
     </mesh>
-    <mesh position={[0, -1.8, .055]}><planeGeometry args={[1.2, .225]} /><meshStandardMaterial map={plaque} roughness={1} /></mesh>
     <Block position={[0, 1.8, 0.16]} size={[.95, 0.045, 0.2]} color="#aa915b" metalness={0.7} />
   </group>;
 }
@@ -163,7 +141,7 @@ function Scene(props: Props) {
       const frames = ROOM1_FRAME_SLOTS.map((slot, j) => {
         const memory = props.content.chapters[i].memories[j];
         if (!memory || i === 1) return null;
-        return <group key={memory.id} position={slot.position} rotation={[0, slot.rotation, 0]} scale={slot.scale}><Frame memory={memory} number={j + 1} color="#a38b5c" position={[0, 0, 0]} rotation={0} enabled={props.entered && Math.abs(props.chapter - i) <= 1} onMemory={props.onMemory} /></group>;
+        return <group key={memory.id} position={slot.position} rotation={[0, slot.rotation, 0]} scale={slot.scale}><Frame memory={memory} number={j + 1} position={[0, 0, 0]} rotation={0} enabled={props.entered && Math.abs(props.chapter - i) <= 1} onMemory={props.onMemory} /></group>;
       });
       return <group key={i} position={[0, 0, z]}>
         {i === 0 ? <Room1>{frames}</Room1> : <Room2 onReflectionsReady={reflectionsReady} reduced={props.reduced} out={props.candleOut} decorationPath={props.entered ? props.content.cakeDecorationPath : undefined} />}

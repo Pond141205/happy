@@ -1,0 +1,15 @@
+{
+  "birthday": "01012000",
+  "letter": "สุขสันต์วันเกิดนะ\n\nตรงนี้จะเป็นคำอวยพรที่เขียนให้เธอ\n\nยินดีต้อนรับกลับบ้าน",
+  "chapters": [
+    { "title": "จุดเริ่มต้นของเรา", "english": "Where we began", "subtitle": "บางเรื่องราว เริ่มจากการได้เจอใครสักคน", "color": "#b88e63", "memories": [
+      { "id": "first", "title": "ครั้งแรกที่ได้เจอ", "caption": "เรื่องเล่าของวันนั้น", "date": "THE FIRST HELLO", "kind": "photo" }
+    ] },
+    { "title": "วันธรรมดาที่พิเศษ", "english": "Our little moments", "subtitle": "แค่มีเธออยู่ด้วยก็พอ", "color": "#939e89", "memories": [
+      { "id": "laugh", "title": "เสียงหัวเราะของเรา", "caption": "ช่วงเวลาที่อยากย้อนกลับมาดู", "date": "PRESS PLAY, FEEL AGAIN", "kind": "video" }
+    ] },
+    { "title": "ระหว่างระยะทาง", "english": "An ocean apart", "subtitle": "อยู่คนละฟากฟ้า แต่ยังอยู่ในทุกวันของกันและกัน", "color": "#698b99", "memories": [] },
+    { "title": "กลับมาหากัน", "english": "Home is with you", "subtitle": "ในที่สุด การรอคอยก็มีปลายทางเป็นเธอ", "color": "#ba9c70", "memories": [] },
+    { "title": "แด่เธอ คนพิเศษ", "english": "A wish, just for you", "subtitle": "Happy birthday & welcome home, my love.", "color": "#b59469", "memories": [] }
+  ]
+}

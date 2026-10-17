@@ -1,0 +1,16 @@
+import { readFile, readdir } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const index = await readFile('dist/index.html', 'utf8');
+const base = process.argv[2] || '/';
+assert(base.startsWith('/') && base.endsWith('/'), 'Pass a Pages base path with leading and trailing slashes');
+const moduleSource = index.match(/<script[^>]+src="([^"]+)"/)?.[1];
+assert(moduleSource?.startsWith(`${base}assets/`), `Module must load below ${base}`);
+assert(index.includes(`href="${base}favicon.svg"`), 'Favicon must respect the Pages subpath');
+assert(index.includes('Content-Security-Policy'), 'Production must retain CSP');
+assert(!index.includes('unsafe-eval'), 'Do not permit eval');
+const files = await readdir('dist/assets');
+const scripts = await Promise.all(files.filter(f => f.endsWith('.js')).map(f => readFile(`dist/assets/${f}`, 'utf8')));
+assert(!scripts.join('').includes('ชมเวอร์ชันตัวอย่าง'), 'Development entry must not ship');
+assert(!files.some(f => f.endsWith('.map')), 'No production source maps');
+assert(!/VITE_.*SERVICE_ROLE/.test(scripts.join('')), 'Never bundle service credentials');
+console.log(`Production checks passed below ${base}: CSP retained, demo entry removed, no source maps.`);

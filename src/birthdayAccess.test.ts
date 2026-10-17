@@ -3,7 +3,7 @@ import { webcrypto, randomBytes, pbkdf2Sync, createCipheriv } from 'node:crypto'
 import { decryptExperience, type EncryptedExperience } from './birthdayAccess';
 function seal(code: string): EncryptedExperience {
   const salt = randomBytes(16), iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', pbkdf2Sync(code, salt, 310000, 32, 'sha256'), iv);
-  const body = Buffer.concat([cipher.update(JSON.stringify({ title: 'My last massage', message: 'A private test message.\n\nSecond paragraph.' })), cipher.final(), cipher.getAuthTag()]);
+  const body = Buffer.concat([cipher.update(JSON.stringify({ title: 'Just one thing', message: 'A private test message.\n\nSecond paragraph.' })), cipher.final(), cipher.getAuthTag()]);
   return { version: 1, salt: salt.toString('base64'), iv: iv.toString('base64'), ciphertext: body.toString('base64') };
 }
 describe('Birthday-only encrypted entry', () => {

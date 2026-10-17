@@ -15,5 +15,5 @@ export async function unlockExperience(code: string) {
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error('ยังไม่ได้เตรียมรหัสสำหรับเว็บนี้ กรุณาติดต่อเจ้าของ');
   try { return await decryptExperience(code, await response.json()); }
-  catch { throw new Error('ลองอีกครั้งนะ วันที่พิเศษของเธอ ✧'); }
+  catch { throw new Error('ลองอีกครั้งนะ วันที่พิเศษของเทอ ✧'); }
 }

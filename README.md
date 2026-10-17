@@ -4,7 +4,7 @@ The active entrance is birthday-only; Google sign-in has been removed from the a
 
 To change the code or letter: edit private-media/experience.json, run node scripts/prepare-experience.mjs for localhost, then node scripts/prepare-experience.mjs --publish for the encrypted production asset. Never commit the private input file.
 
-Blowing the candles bends/shrinks the flames, fades their light and releases low-cost smoke puffs over three seconds. Reduced-motion mode uses a short fade. After that, My last massage asks whether to open the letter. Declining closes the invitation; its button remains available to open it later. The letter scrolls and contains the supplied wording unchanged. Logout resets this state.
+Blowing the candles bends/shrinks the flames, fades their light and releases low-cost smoke puffs over three seconds. Reduced-motion mode uses a short fade. After that, Just one thing asks whether to open the letter. Declining closes the invitation; its button remains available to open it later. The letter scrolls and contains the supplied wording unchanged. Logout resets this state.
 
 The Supabase setup notes below describe the older account-based architecture and are not the current entry flow.
 

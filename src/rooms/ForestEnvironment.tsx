@@ -1,42 +1,16 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clearOfMuseum, groundHeight, seededRandom } from './forestLayout';
 import ForestTrees from './ForestTrees';
+import { useLoader } from '@react-three/fiber';
+import { mountainBackdropGeometry } from './mountainBackdrop';
 
-function Mountain({ radius, height, color, seed }: { radius: number; height: number; color: string; seed: number }) {
-  const geometry = useMemo(() => {
-    const positions: number[] = [], indices: number[] = [], segments = 256, rings = 24;
-    for (let j = 0; j <= rings; j++) for (let i = 0; i <= segments; i++) {
-      const a = i / segments * Math.PI * 2, t = j / rings, r = radius - 24 + t * 65;
-      const silhouette = height * (1 + .23 * Math.sin(a * 5 + seed) + .17 * Math.sin(a * 11 - seed) + .06 * Math.sin(a * 31));
-      const y = -24 + Math.pow(Math.sin(t * Math.PI), 1.5) * silhouette;
-      positions.push(Math.cos(a) * r, y, Math.sin(a) * r);
-      if (j < rings && i < segments) { const k = j * (segments + 1) + i; indices.push(k, k + segments + 1, k + 1, k + 1, k + segments + 1, k + segments + 2); }
-    }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); g.setIndex(indices); g.computeVertexNormals(); return g;
-  }, [radius, height, seed]);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry}><meshStandardMaterial color={color} roughness={1} side={THREE.DoubleSide} fog={false} /></mesh>;
-}
-function MountainSky() {
-  return <mesh name="continuous-sunset-sky" frustumCulled={false}>
-    <sphereGeometry args={[410, 48, 24]} />
-    <shaderMaterial side={THREE.BackSide} depthWrite={false} vertexShader={`varying vec3 vDirection; void main(){ vDirection=position; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`} fragmentShader={`
-      varying vec3 vDirection;
-      void main(){
-        vec3 d=normalize(vDirection); float h=max(d.y,0.0);
-        vec3 horizon=vec3(.68,.32,.16), zenith=vec3(.12,.29,.52);
-        vec3 col=mix(horizon,zenith,smoothstep(0.0,.75,h));
-        col=mix(vec3(.35,.44,.41),col,smoothstep(-.12,.025,d.y));
-        vec3 sun=normalize(vec3(.65,.17,-.72)); float alignment=dot(d,sun);
-        col+=vec3(.33,.15,.045)*pow(max(alignment,0.0),36.0);
-        col=mix(col,vec3(2.5,1.75,.85),smoothstep(.99978,.99994,alignment));
-        gl_FragColor=vec4(col,1.0);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`} />
-  </mesh>;
+function MountainBackdrop() {
+  const source = useLoader(THREE.TextureLoader, `${import.meta.env.BASE_URL}images/environment/mountain-panorama.webp`);
+  const geometry = useMemo(mountainBackdropGeometry, []);
+  const texture = useMemo(() => { const t = source.clone(); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.needsUpdate = true; return t; }, [source]);
+  useEffect(() => () => { geometry.dispose(); texture.dispose(); }, [geometry, texture]);
+  return <mesh name="photographic-distant-mountains" geometry={geometry} rotation={[0, Math.PI / 2, 0]} frustumCulled={false}><meshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} fog={false} toneMapped={false} /></mesh>;
 }
 function Ground() {
   const geometry = useMemo(() => {
@@ -82,5 +56,5 @@ function Undergrowth() {
   return <group name="garden-foreground-depth"><mesh geometry={fern}><meshStandardMaterial color="#547347" side={THREE.DoubleSide} roughness={1} /></mesh><instancedMesh ref={rocks} args={[undefined, undefined, 90]} receiveShadow><dodecahedronGeometry args={[1, 1]} /><meshStandardMaterial roughness={.95} /></instancedMesh><instancedMesh ref={shrubs} args={[undefined, undefined, 180]}><icosahedronGeometry args={[1, 2]} /><meshStandardMaterial roughness={1} /></instancedMesh></group>;
 }
 export default function ForestEnvironment() {
-  return <group name="continuous-3d-mountain-forest"><MountainSky /><Ground /><Mountain radius={310} height={68} color="#8298ad" seed={2} /><Mountain radius={220} height={55} color="#708f99" seed={5} /><Mountain radius={145} height={40} color="#657f74" seed={8} /><ForestTrees /><Undergrowth /></group>;
+  return <group name="continuous-3d-mountain-forest"><MountainBackdrop /><Ground /><ForestTrees /><Undergrowth /></group>;
 }

@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { ArrowDown, ArrowLeft, ArrowRight, Check, CircleHelp, Compass, Flame, Heart, Image as ImageIcon, KeyRound, LayoutGrid, LockKeyhole, LogOut, Maximize2, Play, ShieldCheck, Volume2, VolumeX, X } from 'lucide-react';
 import { backend, loadExhibition } from './backend';
 import { sample, type Exhibition, type Memory } from './content';
@@ -9,6 +9,8 @@ import { chapterAt, chapterPresentation } from './rooms/layout';
 import Joystick from './controls/MovementJoystick';
 import { INITIAL_POSE, type CameraPose } from './controls/movement';
 import { NEUTRAL, type StickVector } from './controls/joystick';
+import { sceneLoading } from './sceneLoading';
+import SceneLoading from './SceneLoadingOverlay';
 
 const localPreview = import.meta.env.DEV;
 class SceneBoundary extends Component<{ children: ReactNode; onError: (reason?: string) => void }, { failed: boolean }> {
@@ -57,6 +59,9 @@ export default function App() {
   const [album, setAlbum] = useState(false);
   const [failed3D, setFailed3D] = useState(false);
   const [sceneVersion, setSceneVersion] = useState(0);
+  const [loadingId, setLoadingId] = useState(0);
+  const loading = useSyncExternalStore(sceneLoading.subscribe, sceneLoading.getSnapshot);
+  const sceneReady = loading.id === loadingId && loading.phase === 'ready';
   const [sceneError, setSceneError] = useState('');
   const wants3D = useRef(true);
   const Gallery = useMemo(() => lazy(() => import('./Gallery')), [sceneVersion]);
@@ -78,6 +83,7 @@ export default function App() {
   const epoch = useRef(0);
   const goChapter = (i: number) => { if (album || failed3D) setChapter(Math.max(0, Math.min(1, i))); };
   const clear = () => {
+    sceneLoading.start();
     epoch.current++; setStage('login'); setContent(sample); setMemory(null);  setHelp(false); joystick.current = { ...NEUTRAL }; setDemo(false); demoRef.current = false; setSignedIn(false); setCode(''); setCandleOut(false); setChapter(0); cameraPose.current = { ...INITIAL_POSE }; joystick.current = { ...NEUTRAL }; setMusicOn(false); void music.current?.stop();
   };
   useEffect(() => {
@@ -130,6 +136,7 @@ export default function App() {
   }
   function enter() {
     if (code !== content.birthday) { setError('ลองอีกครั้งนะ วันที่พิเศษของเธอ ✧'); return; }
+    setLoadingId(sceneLoading.start());
     setError(''); setStage('museum'); setChapter(0); cameraPose.current = { ...INITIAL_POSE }; joystick.current = { ...NEUTRAL };
     setAudioError('');
     void music.current?.start().then(() => setMusicOn(true)).catch(e => {
@@ -145,6 +152,7 @@ export default function App() {
   const toggleView = () => {
     joystick.current = { ...NEUTRAL };
     if (showAlbum) {
+      setLoadingId(sceneLoading.start());
       wants3D.current = true;
       setSceneError('');
       setChapter(chapterAt(cameraPose.current.z));
@@ -153,11 +161,12 @@ export default function App() {
       setAlbum(false);
     } else { wants3D.current = false; setAlbum(true); }
   };
-  const paused = !!memory || help || hidden || showAlbum;
+  const paused = !!memory || help || hidden || showAlbum || !sceneReady;
   const onPlaying = useRef((playing: boolean) => music.current?.duck(playing)).current;
 
   return <main data-scene-error={localPreview ? sceneError : undefined} className={`app ${entered ? 'entered' : 'at-door'} ${showAlbum && entered ? 'album-mode' : ''}`}>
-    {entered && !showAlbum && <div className="scene" aria-label="พิพิธภัณฑ์สามมิติ"><SceneBoundary key={sceneVersion} onError={handleSceneError}><Suspense fallback={<div className="scene-loading"><span className="loading-ring" />กำลังเปิดไฟในพิพิธภัณฑ์…</div>}><Gallery content={content} entered={entered} chapter={chapter} pose={cameraPose} stick={joystick} paused={paused} reduced={reduced} candleOut={candleOut} lookReset={lookReset} onChapter={setChapter} onAudioMix={mix => music.current?.setMix(mix)} onMemory={setMemory} onError={handleSceneError} /></Suspense></SceneBoundary></div>}
+    {entered && !showAlbum && <div className="scene" aria-label="พิพิธภัณฑ์สามมิติ"><SceneBoundary key={sceneVersion} onError={handleSceneError}><Suspense fallback={null}><Gallery content={content} entered={entered} chapter={chapter} pose={cameraPose} stick={joystick} paused={paused} preparing={!sceneReady} loadingId={loadingId} reduced={reduced} candleOut={candleOut} lookReset={lookReset} onChapter={setChapter} onAudioMix={mix => music.current?.setMix(mix)} onMemory={setMemory} onError={handleSceneError} /></Suspense></SceneBoundary></div>}
+    {entered && !showAlbum && !sceneReady && <SceneLoading key={loadingId} state={loading} onAlbum={() => { joystick.current = { ...NEUTRAL }; wants3D.current = false; setAlbum(true); }} />}
     <div className="scene-shade" />
     <header className="topbar"><a className="brand" href="#" onClick={e => { e.preventDefault(); if (entered) goChapter(0); }}><Monogram /><span>THE MUSEUM <i>of</i> US</span></a><div className="top-actions">{demo && <span className="preview-badge">ตัวอย่าง · ไม่มีข้อมูลจริง</span>}<span className="private-label"><LockKeyhole size={13} /> A PRIVATE EXHIBITION</span>{entered && <button className="icon-button" onClick={() => void logout()} aria-label="ออกจากระบบ"><LogOut size={18} /></button>}</div></header>
     {!entered ? <>

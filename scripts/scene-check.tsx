@@ -13,6 +13,7 @@ const views: Record<string, CameraPose> = {
   'Forest through glass': { x: 0, z: -23, yaw: 1.05, pitch: .12 },
   'Mountain window': { x: 0, z: -23, yaw: 0, pitch: .1 },
   'Close tree': { x: -3.4, z: -21, yaw: Math.PI / 2, pitch: .2 },
+  'Cake portrait': { x: 0, z: -16.7, yaw: 0, pitch: -.1 },
 };
 function Check() {
   const [view, setView] = useState('Dome corners');

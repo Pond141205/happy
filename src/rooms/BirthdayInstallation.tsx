@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { usePrivateMedia } from '../media';
 import { BIRTHDAY } from './layout';
+import BadtzTopper from './BadtzTopper';
 import { LeafCloud } from './architecture';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 function Grass() {
@@ -48,22 +49,6 @@ function Meadow() {
     <mesh position={[0, .025, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[1.72, .018, 6, 80]} /><meshStandardMaterial color="#86774e" metalness={.4} roughness={.55} /></mesh>
     <Grass /><LeafCloud />
     <OchnaFlowers />
-  </group>;
-}
-function BadtzTopper() {
-  return <group position={[0, 2.2, 0]} scale={.56}>
-    <mesh position={[0, .19, 0]} scale={[.24, .29, .19]} castShadow><sphereGeometry args={[1, 24, 20]} /><meshStandardMaterial color="#242626" roughness={.75} /></mesh>
-    <mesh position={[0, .18, .163]} scale={[.145, .185, .035]}><sphereGeometry args={[1, 20, 16]} /><meshStandardMaterial color="#f2eee0" /></mesh>
-    <mesh position={[0, .48, 0]} scale={[.32, .275, .205]} castShadow><sphereGeometry args={[1, 28, 24]} /><meshStandardMaterial color="#242626" /></mesh>
-    {[-2, -1, 0, 1, 2].map(i => <mesh key={i} position={[i * .105, .735 - Math.abs(i) * .018, -.014]} rotation={[0, 0, -i * .19]}><coneGeometry args={[.072, .18, 4]} /><meshStandardMaterial color="#242626" /></mesh>)}
-    {[-1, 1].map(side => <group key={side}>
-      <mesh position={[side * .13, .47, .181]} scale={[.099, .09, .033]}><sphereGeometry args={[1, 20, 16]} /><meshStandardMaterial color="#faf5e5" /></mesh>
-      <mesh position={[side * .103, .444, .212]} scale={[.027, .039, .012]}><sphereGeometry args={[1, 14, 12]} /><meshStandardMaterial color="#161a1a" /></mesh>
-      <mesh position={[side * .14, .553, .175]} rotation={[0, 0, side * -.13]}><boxGeometry args={[.20, .057, .073]} /><meshStandardMaterial color="#242626" /></mesh>
-      <mesh position={[side * .28, .19, 0]} scale={[.076, .18, .06]} rotation={[0, 0, side * .38]}><sphereGeometry args={[1, 12, 12]} /><meshStandardMaterial color="#242626" /></mesh>
-      <mesh position={[side * .135, -.035, .06]} scale={[.105, .04, .115]}><sphereGeometry args={[1, 16, 12]} /><meshStandardMaterial color="#d8b95d" /></mesh>
-    </group>)}
-    <mesh position={[0, .365, .206]} scale={[.112, .037, .085]}><sphereGeometry args={[1, 20, 12]} /><meshStandardMaterial color="#d9b756" /></mesh>
   </group>;
 }
 function Decoration({ path }: { path: string }) {

@@ -1,5 +1,5 @@
 import { passageMix } from './audioConfig';
-import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { Canvas, ThreeEvent, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -13,8 +13,9 @@ import { ROOM1_FRAME_SLOTS } from './rooms/room1Config';
 import { stepMovement, type CameraPose } from './controls/movement';
 import type { StickVector } from './controls/joystick';
 import RenderBudget from './RenderBudget';
+import { sceneLoading, SceneWarmupGate } from './sceneLoading';
 
-type Props = { content: Exhibition; pose: RefObject<CameraPose>; stick: RefObject<StickVector>; entered: boolean; chapter: number; paused: boolean; reduced: boolean; candleOut: boolean; lookReset: number; onChapter: (i: number) => void; onAudioMix: (mix: number) => void; onMemory: (m: Memory) => void; onError: (reason?: string) => void };
+type Props = { content: Exhibition; pose: RefObject<CameraPose>; stick: RefObject<StickVector>; entered: boolean; chapter: number; paused: boolean; preparing?: boolean; loadingId?: number; reduced: boolean; candleOut: boolean; lookReset: number; onChapter: (i: number) => void; onAudioMix: (mix: number) => void; onMemory: (m: Memory) => void; onError: (reason?: string) => void };
 
 function Block({ position, size, color, metalness = 0 }: { position: [number, number, number]; size: [number, number, number]; color: string; metalness?: number }) {
   return <mesh position={position}><boxGeometry args={size} /><meshStandardMaterial color={color} roughness={0.75} metalness={metalness} /></mesh>;
@@ -146,6 +147,8 @@ function SurfaceReflections() {
   return null;
 }
 function Scene(props: Props) {
+  const [probeReady, setProbeReady] = useState(false);
+  const reflectionsReady = useCallback(() => setProbeReady(true), []);
   return <>
     <ContextEvents onError={props.onError} />
     <RenderBudget active={props.entered && !props.paused} />
@@ -160,12 +163,19 @@ function Scene(props: Props) {
         return <group key={memory.id} position={slot.position} rotation={[0, slot.rotation, 0]} scale={slot.scale}><Frame memory={memory} number={j + 1} color="#a38b5c" position={[0, 0, 0]} rotation={0} enabled={props.entered && Math.abs(props.chapter - i) <= 1} onMemory={props.onMemory} /></group>;
       });
       return <group key={i} position={[0, 0, z]}>
-        {i === 0 ? <Room1>{frames}</Room1> : <Room2 reduced={props.reduced} out={props.candleOut} decorationPath={props.entered ? props.content.cakeDecorationPath : undefined} />}
+        {i === 0 ? <Room1>{frames}</Room1> : <Room2 onReflectionsReady={reflectionsReady} reduced={props.reduced} out={props.candleOut} decorationPath={props.entered ? props.content.cakeDecorationPath : undefined} />}
       </group>;
     })}
     {[0].map(i => <Transition key={i} z={-10 - i * 20} />)}
     <Navigation {...props} />
+    <SceneReady probeReady={probeReady} loadingId={props.loadingId ?? 0} />
   </>;
+}
+function SceneReady({ probeReady, loadingId }: { probeReady: boolean; loadingId: number }) {
+  const gate = useRef(new SceneWarmupGate()), gl = useThree(s => s.gl);
+  useEffect(() => { sceneLoading.preparing(loadingId); }, [loadingId]);
+  useFrame(() => { if (gate.current.frame(probeReady && sceneLoading.getSnapshot().phase === 'preparing')) { sceneLoading.ready(loadingId); if (import.meta.env.DEV) gl.domElement.dataset.sceneReady = 'true'; } });
+  return null;
 }
 function ContextEvents({ onError }: { onError: (reason?: string) => void }) {
   const gl = useThree(state => state.gl);
@@ -178,7 +188,21 @@ function ContextEvents({ onError }: { onError: (reason?: string) => void }) {
   return null;
 }
 export default function Gallery(props: Props) {
+  // Paint the loading overlay before synchronous geometry/shader preparation starts.
+  const [mountCanvas, setMountCanvas] = useState(false);
+  useEffect(() => { let second = 0; const first = requestAnimationFrame(() => { second = requestAnimationFrame(() => setMountCanvas(true)); }); return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); }; }, []);
+  useLayoutEffect(() => {
+    const manager = THREE.DefaultLoadingManager, id = props.loadingId ?? 0;
+    const prior = { start: manager.onStart, progress: manager.onProgress, load: manager.onLoad, error: manager.onError }; let offset: number | undefined;
+    const start: typeof manager.onStart = (url, loaded, total) => { offset ??= loaded; sceneLoading.assets(id, loaded - offset, total - offset); prior.start?.(url, loaded, total); };
+    const progress: typeof manager.onProgress = (url, loaded, total) => { sceneLoading.assets(id, loaded - (offset ?? 0), total - (offset ?? 0)); prior.progress?.(url, loaded, total); };
+    const load = () => { sceneLoading.preparing(id); prior.load?.(); };
+    const error = (url: string) => { if (url.includes('textures/forest/') || url.includes('images/environment/')) sceneLoading.fail(id); prior.error?.(url); };
+    manager.onStart = start; manager.onProgress = progress; manager.onLoad = load; manager.onError = error;
+    return () => { if (manager.onStart === start) manager.onStart = prior.start; if (manager.onProgress === progress) manager.onProgress = prior.progress; if (manager.onLoad === load) manager.onLoad = prior.load; if (manager.onError === error) manager.onError = prior.error; };
+  }, [props.loadingId]);
   const [initialPose] = useState(() => ({ ...props.pose.current }));
   const cameraOptions = useMemo(() => ({ position: [props.entered ? initialPose.x : 0, props.entered ? 1.72 : 2, props.entered ? initialPose.z : 7.6] as [number, number, number], rotation: [initialPose.pitch, initialPose.yaw, 0] as [number, number, number], fov: 62, near: .1, far: 480 }), [initialPose]);
-  return <Canvas shadows frameloop={props.entered && !props.paused ? 'always' : 'demand'} dpr={[1, 1.5]} camera={cameraOptions} gl={{ antialias: true, powerPreference: 'high-performance' }} fallback={<div className="canvas-fallback">เบราว์เซอร์นี้ไม่รองรับฉาก 3D กรุณาเลือกดูแบบอัลบั้ม</div>}><Scene {...props} /></Canvas>;
+  if (!mountCanvas) return null;
+  return <Canvas shadows frameloop={props.preparing || (props.entered && !props.paused) ? 'always' : 'demand'} dpr={[1, 1.5]} camera={cameraOptions} gl={{ antialias: true, powerPreference: 'high-performance' }} fallback={<div className="canvas-fallback">เบราว์เซอร์นี้ไม่รองรับฉาก 3D กรุณาเลือกดูแบบอัลบั้ม</div>}><Scene {...props} /></Canvas>;
 }

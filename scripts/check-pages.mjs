@@ -24,7 +24,7 @@ try {
   for (const m of html.matchAll(/(?:src|href)="([^"]+)"/g)) if (m[1].startsWith(base)) urls.add(m[1]);
   const assetFiles = await import('node:fs/promises').then(fs => fs.readdir(resolve(root, 'assets')));
   for (const name of assetFiles.filter(f => /\.(?:js|css|woff2?)$/.test(f))) urls.add(`${base}assets/${name}`);
-  for (const name of ['images/memory-coast.png', 'images/memory-meadow.png', 'audio/you-and-i.mp3', 'audio/about-you.mp3', '.nojekyll']) urls.add(base + name);
+  for (const name of ['images/memory-coast.png', 'images/memory-meadow.png', 'images/environment/mountain-panorama.webp', 'audio/you-and-i.mp3', 'audio/about-you.mp3', '.nojekyll']) urls.add(base + name);
   for (const name of ['twigs.webp', 'bark.webp', 'bark-normal.webp', 'tree-views.webp']) urls.add(`${base}textures/forest/${name}`);
   for (const url of urls) {
     const asset = await fetch(origin + url); assert.equal(asset.status, 200, `Asset unavailable: ${url}`);

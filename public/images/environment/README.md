@@ -1,0 +1,9 @@
+# Distant mountain backdrop
+
+`mountain-panorama.webp`: AI-generated landscape, created with the built-in image generation tool on 2026-10-18. No API key or remote runtime service is used. This is scenery, not a personal photograph.
+
+Generated PNG: 1774 × 887. Delivery texture: 2048 × 1024 WebP, 103,732 bytes. Resampling does not add source detail. Decoded RGBA including mipmaps is approximately 10.7 MiB. The image is projected onto a distant sphere with a compressed horizon belt; it is an artistic panorama, not a measured HDR environment or a traversable landscape. Near trees and terrain remain 3D. The wrap seam faces away from the main conservatory view.
+
+Final generation prompt (built-in mode):
+
+> Create a production background texture for a web 3D conservatory: a photorealistic seamless 360-degree equirectangular mountain valley panorama, 2:1 horizontal aspect ratio, ideally 4096 by 2048. Eye-level view from a quiet forested mountain hillside at blue-hour sunset. Distant layered natural green forest-covered mountains and valleys, realistic atmospheric haze, muted sage-green foothills, blue-grey distant ridges, warm pale peach horizon fading into soft dusty blue sky. Mountains occupy lower 35 percent of the panorama; broad clear sky occupies upper 65 percent. Gentle natural lighting without a visible solar disc. Entire lower edge is distant forest and terrain, not interior or immediate foreground. Left and right edges must meet seamlessly with similar horizon heights and colors; no sharp high mountains near the stitch. Equirectangular projection appropriate for wrapping on the inside of a sphere; natural photography, no stylized low-poly shapes, no dramatic fantasy landscape, no buildings, no roads, no text, no people, no watermarks. This is the actual far scenery asset, not a mockup, no window frame or room in the image.

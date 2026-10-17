@@ -10,7 +10,7 @@ export default function RenderBudget({ active }: { active: boolean }) {
   const controller = useMemo(() => new AdaptiveResolution(profile.dpr), [profile.dpr]);
   const frames = useRef(0), geometryCount = useRef(-1);
   useEffect(() => {
-    setDpr(profile.dpr); gl.transmissionResolutionScale = profile.transmissionScale;
+    setDpr(profile.dpr); gl.transmissionResolutionScale = profile.transmissionScale; gl.shadowMap.enabled = !profile.compact;
     if (camera instanceof THREE.PerspectiveCamera) { camera.fov = profile.fov; camera.updateProjectionMatrix(); }
   }, [camera, gl, profile, setDpr]);
   useEffect(() => {

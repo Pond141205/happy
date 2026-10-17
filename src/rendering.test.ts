@@ -4,9 +4,9 @@ describe('iPhone and desktop render budgets', () => {
   it('budgets a high-DPR iPhone in both orientations without rendering its entire native pixel count', () => {
     for (const [w, h] of [[402, 874], [874, 402]]) {
       const p = renderBudget(w, h, 3, true);
-      expect(p.compact).toBe(true); expect(p.dpr).toBe(1.75);
-      expect(w * h * p.dpr ** 2).toBeLessThanOrEqual(1_200_000);
-      expect(p.transmissionScale).toBe(.75); expect(p.fov).toBe(w < h ? 72 : 62);
+      expect(p.compact).toBe(true); expect(p.dpr).toBe(1.25);
+      expect(w * h * p.dpr ** 2).toBeLessThanOrEqual(800_000);
+      expect(p.transmissionScale).toBe(.5); expect(p.fov).toBe(w < h ? 72 : 62);
     }
   });
   it('also handles tablet touch, desktop resize, low-DPR screens and malformed dimensions', () => {

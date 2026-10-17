@@ -27,6 +27,7 @@ try {
   for (const name of ['images/memory-coast.png', 'images/memory-meadow.png', 'images/environment/mountain-panorama.webp', 'audio/you-and-i.mp3', 'audio/about-you.mp3', '.nojekyll']) urls.add(base + name);
   urls.add(`${base}images/environment/forest-ridges.webp`);
   urls.add(`${base}experience.enc.json`);
+  for (const kind of ['thumb', 'full']) for (let i = 1; i <= 32; i++) urls.add(`${base}encrypted-media/${kind}/${String(i).padStart(2, '0')}.bin`);
   for (const name of ['twigs.webp', 'bark.webp', 'bark-normal.webp', 'tree-views.webp']) urls.add(`${base}textures/forest/${name}`);
   for (const url of urls) {
     const asset = await fetch(origin + url); assert.equal(asset.status, 200, `Asset unavailable: ${url}`);

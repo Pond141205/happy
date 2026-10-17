@@ -18,11 +18,11 @@ import { sceneLoading, SceneWarmupGate } from './sceneLoading';
 type Props = { content: Exhibition; pose: RefObject<CameraPose>; stick: RefObject<StickVector>; entered: boolean; chapter: number; paused: boolean; preparing?: boolean; loadingId?: number; reduced: boolean; candleOut: boolean; lookReset: number; onChapter: (i: number) => void; onAudioMix: (mix: number) => void; onMemory: (m: Memory) => void; onError: (reason?: string) => void };
 
 function Block({ position, size, color, metalness = 0 }: { position: [number, number, number]; size: [number, number, number]; color: string; metalness?: number }) {
-  return <mesh position={position}><boxGeometry args={size} /><meshStandardMaterial color={color} roughness={0.75} metalness={metalness} /></mesh>;
+  return <mesh position={position} userData={{ batchable: true }}><boxGeometry args={size} /><meshStandardMaterial color={color} roughness={0.75} metalness={metalness} /></mesh>;
 }
 function Frame({ memory, number, position, rotation, enabled, onMemory }: { memory: Memory; number: number; position: [number, number, number]; rotation: number; enabled: boolean; onMemory: Props['onMemory'] }) {
   const [hovered, setHovered] = useState(false);
-  const mediaPath = memory.kind === 'photo' ? memory.path : memory.posterPath;
+  const mediaPath = memory.posterPath || (memory.kind === 'photo' ? memory.path : undefined);
   const frameRef = useRef<THREE.Group>(null), worldPosition = useMemo(() => new THREE.Vector3(), []);
   const [nearby, setNearby] = useState(false);
   const elapsed = useRef(0);
@@ -31,7 +31,7 @@ function Frame({ memory, number, position, rotation, enabled, onMemory }: { memo
   // All 32 local thumbnails total <1 MB in transfer; keep them visible along the hall.
   // Remote full-size private media still obeys the distance budget.
   const localThumbnail = import.meta.env.DEV && thumbnailPath?.startsWith('local/gallery/thumb/');
-  const { url } = usePrivateMedia(thumbnailPath, enabled && (!!localThumbnail || nearby));
+  const { url } = usePrivateMedia(thumbnailPath, enabled && (!!localThumbnail || thumbnailPath?.startsWith('encrypted-media/thumb/') || nearby));
   const imageUrl = url || (!mediaPath ? `${import.meta.env.BASE_URL}images/${number % 2 ? 'memory-coast' : 'memory-meadow'}.png` : undefined);
   const [photo, setPhoto] = useState<THREE.Texture>();
   useEffect(() => {
@@ -120,17 +120,23 @@ function Navigation(props: Props) {
   return null;
 }
 function SurfaceReflections() {
-  const { gl, scene } = useThree();
+  const { gl, scene, size } = useThree();
+  const compact = window.matchMedia('(pointer: coarse)').matches || Math.min(size.width, size.height) <= 500;
   useEffect(() => {
+    if (compact) return;
     const generator = new THREE.PMREMGenerator(gl), room = new RoomEnvironment();
     const target = generator.fromScene(room, .04), previous = scene.environment, intensity = scene.environmentIntensity;
     scene.environment = target.texture; scene.environmentIntensity = .24;
     room.dispose(); generator.dispose();
     return () => { if (scene.environment === target.texture) { scene.environment = previous; scene.environmentIntensity = intensity; } target.dispose(); };
-  }, [gl, scene]);
+  }, [gl, scene, compact]);
   return null;
 }
 function Scene(props: Props) {
+  const size = useThree(s => s.size);
+  const compact = window.matchMedia('(pointer: coarse)').matches || Math.min(size.width, size.height) <= 500;
+  const [birthdayMounted, setBirthdayMounted] = useState(!compact || props.pose.current.z < 16);
+  useFrame(({ camera }) => { if (!birthdayMounted && camera.position.z < 16) setBirthdayMounted(true); });
   const [probeReady, setProbeReady] = useState(false);
   const reflectionsReady = useCallback(() => setProbeReady(true), []);
   return <>
@@ -141,6 +147,7 @@ function Scene(props: Props) {
     <ambientLight intensity={0.4} /><hemisphereLight args={['#f4e7cf', '#534d3b', .85]} />
     <directionalLight position={[3, 8, 6]} intensity={1.4} color="#ffdfaf" />
     {ROOM_CENTERS.map((z, i) => {
+      if (i === 1 && !birthdayMounted) return null;
       const frames = ROOM1_FRAME_SLOTS.map((slot, j) => {
         const memory = props.content.chapters[i].memories[j];
         if (!memory || i === 1) return null;
@@ -152,7 +159,7 @@ function Scene(props: Props) {
     })}
     {[0].map(i => <Transition key={i} z={-10 - i * 20} />)}
     <Navigation {...props} />
-    <SceneReady probeReady={probeReady} loadingId={props.loadingId ?? 0} />
+    <SceneReady probeReady={!birthdayMounted || probeReady} loadingId={props.loadingId ?? 0} />
   </>;
 }
 function SceneReady({ probeReady, loadingId }: { probeReady: boolean; loadingId: number }) {

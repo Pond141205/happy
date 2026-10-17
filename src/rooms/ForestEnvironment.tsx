@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { clearOfMuseum, groundHeight, seededRandom } from './forestLayout';
 import ForestTrees from './ForestTrees';
-import { useLoader } from '@react-three/fiber';
+import { useLoader, useThree } from '@react-three/fiber';
 import { mountainBackdropGeometry, FOREST_LAYERS, FOREST_SECTORS, forestLayerHeight } from './mountainBackdrop';
 
 function MountainBackdrop() {
@@ -25,13 +25,13 @@ function ForestDepthLayers() {
     <meshBasicMaterial map={layer.texture} color={layer.tint} side={THREE.BackSide} alphaTest={.12} alphaToCoverage fog={false} toneMapped={false} />
   </mesh>)}</group>;
 }
-function Ground() {
+function Ground({ compact }: { compact: boolean }) {
   const geometry = useMemo(() => {
-    const g = new THREE.PlaneGeometry(600, 600, 160, 160); g.rotateX(-Math.PI / 2);
+    const g = new THREE.PlaneGeometry(600, 600, compact ? 64 : 160, compact ? 64 : 160); g.rotateX(-Math.PI / 2);
     const p = g.getAttribute('position'), colors: number[] = [], c = new THREE.Color();
     for (let i = 0; i < p.count; i++) { const x = p.getX(i), z = p.getZ(i); p.setY(i, groundHeight(x, z)); const noise = Math.sin(x * .32) * Math.cos(z * .24); c.setHSL(.23 + noise * .018, .22, .17 + noise * .025); colors.push(c.r, c.g, c.b); }
     g.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); g.computeVertexNormals(); return g;
-  }, []);
+  }, [compact]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return <mesh geometry={geometry} receiveShadow><meshStandardMaterial vertexColors roughness={1} /></mesh>;
 }
@@ -69,5 +69,6 @@ function Undergrowth() {
   return <group name="garden-foreground-depth"><mesh geometry={fern}><meshStandardMaterial color="#547347" side={THREE.DoubleSide} roughness={1} /></mesh><instancedMesh ref={rocks} args={[undefined, undefined, 90]} receiveShadow><dodecahedronGeometry args={[1, 1]} /><meshStandardMaterial roughness={.95} /></instancedMesh><instancedMesh ref={shrubs} args={[undefined, undefined, 180]}><icosahedronGeometry args={[1, 2]} /><meshStandardMaterial roughness={1} /></instancedMesh></group>;
 }
 export default function ForestEnvironment() {
-  return <group name="continuous-3d-mountain-forest"><MountainBackdrop /><ForestDepthLayers /><Ground /><ForestTrees /><Undergrowth /></group>;
+  const size = useThree(s => s.size); const compact = window.matchMedia('(pointer: coarse)').matches || Math.min(size.width, size.height) <= 500;
+  return <group name="continuous-3d-mountain-forest"><MountainBackdrop /><ForestDepthLayers /><Ground compact={compact} /><ForestTrees />{!compact && <Undergrowth />}</group>;
 }

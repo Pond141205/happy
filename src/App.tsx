@@ -1,6 +1,6 @@
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { ArrowDown, ArrowRight, Check, CircleHelp, Compass, Flame, Heart, Image as ImageIcon, KeyRound, LayoutGrid, LockKeyhole, LogOut, Maximize2, Play, Volume2, VolumeX, X } from 'lucide-react';
-import { unlockExperience, type PrivateExperience } from './birthdayAccess';
+import { unlockExperience, clearPrivateMedia, type PrivateExperience } from './birthdayAccess';
 import { sample, type Exhibition, type Memory } from './content';
 import { MuseumMusic } from './music';
 import { usePrivateMedia } from './media';
@@ -41,7 +41,7 @@ function MemoryDetail({ memory, onClose, onPlaying }: { memory: Memory; onClose:
   </Dialog>;
 }
 function AlbumCard({ memory, number, onClick }: { memory: Memory; number: number; onClick: () => void }) {
-  const path = memory.kind === 'photo' ? memory.path : memory.posterPath;
+  const path = memory.posterPath || memory.path;
   const preview = import.meta.env.DEV && path?.startsWith('local/gallery/full/') ? path.replace('/full/', '/thumb/') : path;
   const { url } = usePrivateMedia(preview);
   return <button className="album-card" onClick={onClick}><div className="album-art">{url ? <img src={url} alt={memory.title} /> : <><span>{String(number).padStart(2, '0')}</span></>}{memory.kind === 'video' && <Play className="album-play" />}</div></button>;
@@ -72,6 +72,7 @@ export default function App() {
   }, []);
   const [memory, setMemory] = useState<Memory | null>(null);
   const [help, setHelp] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
 
   const [candleOut, setCandleOut] = useState(false);
   const [blowing, setBlowing] = useState(false);
@@ -88,7 +89,7 @@ export default function App() {
   const epoch = useRef(0);
   const goChapter = (i: number) => { if (album || failed3D) setChapter(Math.max(0, Math.min(1, i))); };
   const clear = () => {
-    sceneLoading.start(); setAlbum(false); setFailed3D(false); setSceneError(''); setAudioError(''); setBusy(false); wants3D.current = true;
+    setToolsOpen(false); clearPrivateMedia(); sceneLoading.start(); setAlbum(false); setFailed3D(false); setSceneError(''); setAudioError(''); setBusy(false); wants3D.current = true;
     epoch.current++; setStage('birthday'); setContent(sample); setMemory(null);  setHelp(false); joystick.current = { ...NEUTRAL };  setCode(''); setCandleOut(false); setBlowing(false); setMessageDialog('closed'); setPrivateExperience(null); setChapter(0); cameraPose.current = { ...INITIAL_POSE }; joystick.current = { ...NEUTRAL }; setMusicOn(false); void music.current?.stop();
   };
   useEffect(() => {
@@ -108,7 +109,7 @@ export default function App() {
     setBusy(true); setError('');
     music.current?.volume(0);
     const audioStart = music.current?.start().then(() => true, () => false);
-    try { const unlocked = await unlockExperience(code); if (attempt !== epoch.current) return; setPrivateExperience(unlocked); }
+    try { const unlocked = await unlockExperience(code); if (attempt !== epoch.current) return; setPrivateExperience(unlocked); if (unlocked.photos) setContent({ ...sample, chapters: sample.chapters.map((c, i) => i ? c : { ...c, memories: unlocked.photos!.map((p, index) => ({ id: `photo-${index}`, title: `ความทรงจำ ${index + 1}`, caption: '', date: '', kind: 'photo', path: p.path, posterPath: p.thumbnailPath })) }) }); }
     catch (e) { void music.current?.stop(); if (attempt === epoch.current) setError(e instanceof Error ? e.message : 'เปิดประตูไม่สำเร็จ'); return; }
     finally { if (attempt === epoch.current) setBusy(false); }
     if (attempt !== epoch.current) return;
@@ -123,7 +124,7 @@ export default function App() {
   const entered = stage === 'museum';
   const showAlbum = album || failed3D;
   const toggleView = () => {
-    joystick.current = { ...NEUTRAL };
+    setToolsOpen(false); joystick.current = { ...NEUTRAL };
     if (showAlbum) {
       setLoadingId(sceneLoading.start());
       wants3D.current = true;
@@ -137,7 +138,7 @@ export default function App() {
   const paused = !!memory || help || messageDialog !== 'closed' || hidden || showAlbum || !sceneReady;
   const onPlaying = useRef((playing: boolean) => music.current?.duck(playing)).current;
 
-  return <main data-scene-error={localPreview ? sceneError : undefined} className={`app ${entered ? 'entered' : 'at-door'} ${showAlbum && entered ? 'album-mode' : ''}`}>
+  return <main data-scene-error={localPreview ? sceneError : undefined} className={`app ${entered ? 'entered' : 'at-door'} ${showAlbum && entered ? 'album-mode' : ''} ${toolsOpen ? 'mobile-tools-open' : ''}`}>
     {entered && !showAlbum && <div className="scene" aria-label="พิพิธภัณฑ์สามมิติ"><SceneBoundary key={sceneVersion} onError={handleSceneError}><Suspense fallback={null}><Gallery content={content} entered={entered} chapter={chapter} pose={cameraPose} stick={joystick} paused={paused} preparing={!sceneReady} loadingId={loadingId} reduced={reduced} candleOut={candleOut} lookReset={lookReset} onChapter={setChapter} onAudioMix={mix => music.current?.setMix(mix)} onMemory={setMemory} onError={handleSceneError} /></Suspense></SceneBoundary></div>}
     {entered && !showAlbum && !sceneReady && <SceneLoading key={loadingId} state={loading} onAlbum={() => { joystick.current = { ...NEUTRAL }; wants3D.current = false; setAlbum(true); }} />}
     <div className="scene-shade" />
@@ -164,7 +165,8 @@ export default function App() {
       {chapter === 1 && <section className={`finale birthday-controls ${showAlbum ? 'finale-album' : ''}`}><span className="eyebrow">YOU ARE MY FAVOURITE CHAPTER</span><h2>Happy birthday,<br /><em>my love.</em></h2><p>{blowing ? 'กำลังเป่าเทียน…' : candleOut ? 'ขอให้ทุกคำอธิษฐานของเทอเป็นจริง' : 'หลับตา อธิษฐาน แล้วเป่าเทียนด้วยกันนะ'}</p><button className="primary-button" disabled={candleOut} onClick={blowCandles}>{blowing ? <>กำลังเป่าเทียน…</> : candleOut ? <><Heart size={18} /> ขอให้คำอธิษฐานเป็นจริง</> : <><Flame size={18} /> อธิษฐานและเป่าเทียน</>}</button>{candleOut && !blowing && <button className="text-button last-message-trigger" onClick={() => setMessageDialog('ask')}>Just one thing</button>}{candleOut && !blowing && <span className="wish-note"><Heart size={15} /> Welcome home. You were always worth the wait.</span>}</section>}
       {!showAlbum && chapter === 0 && <aside className="room1-intro"><p>{ROOM1.intro}</p></aside>}
       {!showAlbum && chapter === 0 && <details className="memory-tray"><summary><span className="eyebrow">EXPLORE THE MEMORIES</span><span>ความทรงจำในห้องนี้</span></summary>{current.memories.map((m, i) => <button key={m.id} onClick={() => setMemory(m)}><span className="memory-index">{String(i + 1).padStart(2, '0')}</span>{m.kind === 'video' ? <Play size={15} /> : <Maximize2 size={15} />}</button>)}<small className="sample-art-note">32 ภาพความทรงจำ · กดที่กรอบเพื่อดูรูปเต็ม</small></details>}
-      <div className="viewer-tools"><button className={`tool-button ${showAlbum ? 'active' : ''}`} onClick={toggleView}><LayoutGrid size={17} /><span>{failed3D ? 'ลองเปิด 3D อีกครั้ง' : showAlbum ? 'กลับห้อง 3D' : 'ดูแบบอัลบั้ม'}</span></button>{!showAlbum && <button className="icon-button" onClick={() => setLookReset(v => v + 1)} aria-label="มองตรงไปยังปลายพิพิธภัณฑ์" title="มองตรงไปยังปลายพิพิธภัณฑ์"><Compass size={18} /></button>}<button className="icon-button" onClick={() => setHelp(true)} aria-label="วิธีเดินชม"><CircleHelp size={19} /></button></div>
+      <button className="mobile-menu-toggle icon-button" aria-label="เมนู" aria-expanded={toolsOpen} onClick={() => setToolsOpen(v => !v)}>•••</button>
+      <div className="viewer-tools"><button className="tool-button mobile-exit" onClick={() => void logout()}>ออกจากห้อง</button><button className={`tool-button ${showAlbum ? 'active' : ''}`} onClick={toggleView}><LayoutGrid size={17} /><span>{failed3D ? 'ลองเปิด 3D อีกครั้ง' : showAlbum ? 'กลับห้อง 3D' : 'ดูแบบอัลบั้ม'}</span></button>{!showAlbum && <button className="icon-button" onClick={() => setLookReset(v => v + 1)} aria-label="มองตรงไปยังปลายพิพิธภัณฑ์" title="มองตรงไปยังปลายพิพิธภัณฑ์"><Compass size={18} /></button>}<button className="icon-button" onClick={() => setHelp(true)} aria-label="วิธีเดินชม"><CircleHelp size={19} /></button></div>
       {audioError && <p className="audio-error" role="alert">{audioError}</p>}
       <div className="bottom-bar"><div className="sound-control"><button className="icon-button" onClick={toggleMusic} aria-label={musicOn ? 'ปิดเพลง' : 'เปิดเพลง'}>{musicOn ? <Volume2 size={19} /> : <VolumeX size={19} />}</button><div><span className="sound-title">{chapter === 0 ? 'You & I' : 'About You'}</span><span className="sound-subtitle">{musicOn ? 'ROOM SOUNDTRACK' : 'MUSIC IS PAUSED'}</span></div><input type="range" min="0" max="60" value={volume} onChange={e => setVolume(Number(e.target.value))} aria-label="ความดังเพลง" /></div><nav className="chapter-navigation" aria-label="ห้องที่กำลังชม">{content.chapters.slice(0, 2).map((c, i) => showAlbum ? <button key={i} className={`chapter-dot ${i === chapter ? 'selected' : ''}`} aria-current={i === chapter ? 'step' : undefined} aria-label={`ดูอัลบั้มห้อง ${i + 1} ${chapterPresentation(c, i).title}`} onClick={() => goChapter(i)}>{String(i + 1).padStart(2, '0')}</button> : <span key={i} className={`chapter-dot ${i === chapter ? 'selected' : ''}`} aria-current={i === chapter ? 'step' : undefined} aria-label={chapterPresentation(c, i).title}>{String(i + 1).padStart(2, '0')}</span>)}</nav><span className="movement-note">เดินด้วยจอยเท่านั้น</span></div>
       {!showAlbum && <div className="walk-hint"><ArrowDown size={13} /><span>ลากบนฉากเพื่อมองรอบ ๆ · ใช้จอยเพื่อเดิน</span></div>}

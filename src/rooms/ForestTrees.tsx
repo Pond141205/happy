@@ -2,11 +2,12 @@ import { useEffect, useMemo } from 'react';
 import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { forestSites } from './forestLayout';
+import MobileForestTrees from './MobileForestTrees';
 import { forestCell, impostorTile, treeDetails, treeGeometry, type TreeDetail } from './treeModel';
 
 const files = ['twigs.webp', 'bark.webp', 'bark-normal.webp', 'tree-views.webp'].map(name => `${import.meta.env.BASE_URL}textures/forest/${name}`);
 
-export default function ForestTrees() {
+function DetailedForestTrees() {
   const source = useLoader(THREE.TextureLoader, files), { camera, gl, size } = useThree();
   const compact = window.matchMedia('(pointer: coarse)').matches || Math.min(size.width, size.height) <= 500;
   const resources = useMemo(() => {
@@ -85,3 +86,5 @@ export default function ForestTrees() {
   });
   return <primitive object={resources.group} />;
 }
+
+export default function ForestTrees() { const size = useThree(s => s.size); const compact = window.matchMedia('(pointer: coarse)').matches || Math.min(size.width, size.height) <= 500; return compact ? <MobileForestTrees /> : <DetailedForestTrees />; }

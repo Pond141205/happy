@@ -19,6 +19,9 @@ assert(!scripts.join('').includes('__local-experience'), 'Local private experien
 assert(!scripts.join('').includes('เข้าสู่ระบบด้วย Google'), 'Google login UI must be removed');
 const envelope = JSON.parse(await readFile('dist/experience.enc.json', 'utf8'));
 assert(envelope.version === 1 && typeof envelope.ciphertext === 'string' && !('message' in envelope) && !('birthday' in envelope), 'Publish encrypted message only');
+for (const kind of ['thumb', 'full']) {
+  const photos = await readdir(`dist/encrypted-media/${kind}`); assert(photos.length === 32 && photos.every(f => /^\d{2}\.bin$/.test(f)), 'Publish 32 encrypted images per size, never plain photos');
+}
 assert(!files.some(f => f.endsWith('.map')), 'No production source maps');
 assert(!/VITE_.*SERVICE_ROLE/.test(scripts.join('')), 'Never bundle service credentials');
 console.log(`Production checks passed below ${base}: CSP retained, demo entry removed, no source maps.`);

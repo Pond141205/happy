@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { archedOutline, GLASS } from './conservatoryGeometry';
 export function Box({ at, size, color, metalness = 0 }: { at: [number, number, number]; size: [number, number, number]; color: string; metalness?: number }) {
-  return <mesh position={at} receiveShadow><boxGeometry args={size} /><meshStandardMaterial color={color} metalness={metalness} roughness={metalness ? .38 : .75} /></mesh>;
+  return <mesh position={at} receiveShadow userData={{ batchable: true }}><boxGeometry args={size} /><meshStandardMaterial color={color} metalness={metalness} roughness={metalness ? .38 : .75} /></mesh>;
 }
 export function Arch({ radius = 1.4, spring = 3.3, z = 0 }: { radius?: number; spring?: number; z?: number }) {
   const geometry = useMemo(() => {

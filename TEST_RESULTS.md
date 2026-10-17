@@ -154,3 +154,10 @@ No physical mobile-device test or deployed Supabase OAuth/RLS test was performed
 
 - Normalize DDMMYYYY to DDMMYY before deriving the unlock key, and normalize the package generator identically. Previously accepting input length 8 did not make it equivalent to the six-digit configured key.
 - Six birthday access tests passed, including the same envelope opened with either year format, wrong birthday rejection and malformed aliases. Verified both forms against the actual published envelope without logging the private code/message. TypeScript/build/security guard/58-asset smoke passed.
+
+## 2026-10-18 — production photos and mobile layout
+- All 32 photos are now included via encrypted manifest; 64 encrypted thumbnail/full assets verified against private source WebPs.
+- Production preview: album decoded 32/32 photos; full image opened at 1152×1536. No local development media endpoint was used.
+- 402×874 portrait and 874×402 landscape: no horizontal overflow; mobile branding hidden and tools collapsed into menu. Control rectangles total approximately 6.8% of portrait viewport.
+- 116 tests across 19 files passed; TypeScript/build/production asset guard and HTTP smoke of 123 assets passed.
+- Mobile rendering reductions and limitations are documented in PERFORMANCE_REPORT.md. Physical iPhone performance remains unverified.

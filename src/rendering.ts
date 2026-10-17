@@ -3,8 +3,8 @@ export function renderBudget(width: number, height: number, deviceDpr: number, c
   const h = Number.isFinite(height) && height > 0 ? height : 768;
   const compact = coarse || Math.min(w, h) <= 500;
   const native = Number.isFinite(deviceDpr) && deviceDpr > 0 ? deviceDpr : 1;
-  const pixels = compact ? 1_200_000 : 2_500_000;
-  return { compact, dpr: Math.min(native, compact ? 1.75 : 1.5, Math.sqrt(pixels / (w * h))), transmissionScale: compact ? .75 : 1, fov: w < h ? 72 : 62 };
+  const pixels = compact ? 800_000 : 2_500_000;
+  return { compact, dpr: Math.min(native, compact ? 1.25 : 1.5, Math.sqrt(pixels / (w * h))), transmissionScale: compact ? .5 : 1, fov: w < h ? 72 : 62 };
 }
 
 /** Change resolution only after sustained samples; ignore suspended tabs and shader compilation gaps. */

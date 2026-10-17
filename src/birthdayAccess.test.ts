@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { webcrypto, randomBytes, pbkdf2Sync, createCipheriv } from 'node:crypto';
-import { decryptExperience, normalizeBirthday, type EncryptedExperience } from './birthdayAccess';
+import { decryptExperience, normalizeBirthday, encryptedPhoto, clearPrivateMedia, type EncryptedExperience } from './birthdayAccess';
+import { vi } from 'vitest';
 function seal(code: string): EncryptedExperience {
   const salt = randomBytes(16), iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', pbkdf2Sync(code, salt, 310000, 32, 'sha256'), iv);
   const body = Buffer.concat([cipher.update(JSON.stringify({ title: 'Just one thing', message: 'A private test message.\n\nSecond paragraph.' })), cipher.final(), cipher.getAuthTag()]);
@@ -28,4 +29,13 @@ describe('Birthday-only encrypted entry', () => {
     await expect(decryptExperience('120399', { ...data, ciphertext: body.toString('base64') })).rejects.toThrow();
   });
   it('rejects malformed and partial birthdays', async () => { await expect(decryptExperience('123', seal('120399'))).rejects.toThrow(); });
+  it('decrypts and caches images only after unlocking, and locks again on logout', async () => {
+    clearPrivateMedia(); await expect(encryptedPhoto('encrypted-media/thumb/01.bin')).rejects.toThrow();
+    const pack = seal('120399'); await decryptExperience('120399', pack);
+    const key = pbkdf2Sync('120399', Buffer.from(pack.salt, 'base64'), 310000, 32, 'sha256'), iv = randomBytes(12), cipher = createCipheriv('aes-256-gcm', key, iv);
+    const original = Buffer.from('test photo bytes'), sealed = Buffer.concat([iv, cipher.update(original), cipher.final(), cipher.getAuthTag()]);
+    const request = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(sealed));
+    try { expect(await (await encryptedPhoto('encrypted-media/thumb/01.bin')).text()).toBe(original.toString()); await encryptedPhoto('encrypted-media/thumb/01.bin'); expect(request).toHaveBeenCalledTimes(1); clearPrivateMedia(); await expect(encryptedPhoto('encrypted-media/thumb/01.bin')).rejects.toThrow(); await expect(encryptedPhoto('../photo.bin')).rejects.toThrow(); }
+    finally { request.mockRestore(); clearPrivateMedia(); }
+  });
 });

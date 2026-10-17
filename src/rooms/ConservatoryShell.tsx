@@ -5,19 +5,23 @@ import { Parquet } from './GalleryShell';
 import { Arch, BotanicalVines, Box, Conservatory, GardenWindow, LeafCloud } from './architecture';
 import { BACK_WINDOWS, SIDE_WINDOWS, conservatoryGlassGeometry, conservatoryRoofGeometry, GLASS, windowWall } from './conservatoryGeometry';
 import { BIRTHDAY } from './layout';
+import BatchBoxes from './BatchBoxes';
 import { sceneLoading } from '../sceneLoading';
 
 function Glazing({ onReady }: { onReady?: () => void }) {
-  const { gl, scene } = useThree(), mesh = useRef<THREE.Mesh>(null), frames = useRef(0), captured = useRef(false);
+  const { gl, scene, size } = useThree(), mesh = useRef<THREE.Mesh>(null), frames = useRef(0), captured = useRef(false);
+  const compact = window.matchMedia('(pointer: coarse)').matches || Math.min(size.width, size.height) <= 500;
   const resources = useMemo(() => ({
     geometry: conservatoryGlassGeometry(), material: new THREE.MeshPhysicalMaterial(GLASS),
     cube: new THREE.WebGLCubeRenderTarget(128, { type: THREE.HalfFloatType, generateMipmaps: true, minFilter: THREE.LinearMipmapLinearFilter }),
     reflection: undefined as THREE.WebGLRenderTarget | undefined,
   }), []);
+  useEffect(() => { Object.assign(resources.material, compact ? { transmission: 0, transparent: true, opacity: .12, depthWrite: false } : { transmission: 1, transparent: false, opacity: 1, depthWrite: true }); resources.material.needsUpdate = true; }, [compact, resources]);
   useFrame(() => {
     if (captured.current || ++frames.current < 3 || !mesh.current) return;
     const loading = sceneLoading.getSnapshot();
     if (loading.phase === 'assets' && loading.loaded < loading.total) return;
+    if (compact) { captured.current = true; onReady?.(); return; }
     // One local reflection probe captures the real forest/room. The glass hides only during its own capture.
     const camera = new THREE.CubeCamera(.1, 500, resources.cube); camera.position.set(0, 2.6, BIRTHDAY.centerZ);
     mesh.current.visible = false;
@@ -40,7 +44,7 @@ export default function ConservatoryShell({ children, onReflectionsReady }: { ch
     return [windowWall(16.2, 5.5, SIDE_WINDOWS), windowWall(10.3, 5.5, BACK_WINDOWS), front, target];
   }, []);
   useEffect(() => () => { side.dispose(); back.dispose(); front.dispose(); }, [side, back, front]);
-  return <group name="open-glazed-forest-conservatory">
+  return <BatchBoxes name="open-glazed-forest-conservatory">
     <Parquet /><Box at={[0, -.08, 0]} size={[10.2, .16, 16.2]} color="#463d30" />
     <mesh geometry={back} position={[0, 0, -8.08]} receiveShadow castShadow><meshStandardMaterial color="#30473a" roughness={.85} side={THREE.DoubleSide} /></mesh>
     <mesh geometry={front} position={[0, 0, 7.96]} receiveShadow castShadow><meshStandardMaterial color="#30473a" roughness={.85} side={THREE.DoubleSide} /></mesh>
@@ -62,5 +66,5 @@ export default function ConservatoryShell({ children, onReflectionsReady }: { ch
     <spotLight position={[1.5, 6, 2]} target={target} intensity={65} color="#ffe3bb" angle={.65} penumbra={.8} distance={16} />
     <pointLight position={[0, 4.8, -5]} intensity={12} distance={13} color="#f8dfbb" />
     {children}
-  </group>;
+  </BatchBoxes>;
 }

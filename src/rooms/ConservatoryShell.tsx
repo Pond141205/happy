@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Parquet } from './GalleryShell';
 import { Arch, BotanicalVines, Box, Conservatory, GardenWindow, LeafCloud } from './architecture';
-import { BACK_WINDOWS, SIDE_WINDOWS, conservatoryGlassGeometry, GLASS, windowWall } from './conservatoryGeometry';
+import { BACK_WINDOWS, SIDE_WINDOWS, conservatoryGlassGeometry, conservatoryRoofGeometry, GLASS, windowWall } from './conservatoryGeometry';
 import { BIRTHDAY } from './layout';
 
 function Glazing() {
@@ -27,6 +27,8 @@ function Glazing() {
 }
 
 export default function ConservatoryShell({ children }: { children: ReactNode }) {
+  const roof = useMemo(conservatoryRoofGeometry, []);
+  useEffect(() => () => roof.dispose(), [roof]);
   const [side, back, front, target] = useMemo(() => {
     const entrance = new THREE.Shape(); entrance.moveTo(-5.15, 0); entrance.lineTo(-1.4, 0); entrance.lineTo(-1.4, 3.3); entrance.absarc(0, 3.3, 1.4, Math.PI, 0, true); entrance.lineTo(1.4, 0); entrance.lineTo(5.15, 0); entrance.lineTo(5.15, 5.5); entrance.lineTo(-5.15, 5.5); entrance.closePath();
     const front = new THREE.ExtrudeGeometry(entrance, { depth: .18, bevelEnabled: false, curveSegments: 32 });
@@ -48,6 +50,7 @@ export default function ConservatoryShell({ children }: { children: ReactNode })
       {SIDE_WINDOWS.map(o => <GardenWindow key={o.center} position={[s * 4.88, o.bottom, o.center]} rotation={s * -Math.PI / 2} width={o.width} height={o.height} glass={false} />)}
       <Box at={[s * 2.55, .4, -7.85]} size={[5.1, .8, .12]} color="#d5cdb9" /><Box at={[s * 2.55, .83, -7.8]} size={[5.1, .06, .19]} color="#e7deca" />
     </group>)}
+    <mesh name="sealed-dome-shoulders" geometry={roof} castShadow receiveShadow><meshStandardMaterial color="#e7deca" roughness={.82} side={THREE.DoubleSide} /></mesh>
     <Conservatory glass={false} /><Glazing /><BotanicalVines /><LeafCloud wall />
     {[-1, 1].map(s => [-6, -2, 2, 6].map(z => <group key={`${s}-${z}`}><mesh position={[s * 4.65, .27, z]}><cylinderGeometry args={[.32, .24, .52, 16]} /><meshStandardMaterial color="#a6987e" roughness={.8} /></mesh><pointLight position={[s * 4.5, .35, z]} intensity={.65} color="#ffc278" distance={2.6} /></group>))}
     <primitive object={target} />

@@ -80,3 +80,12 @@ No physical mobile-device test or deployed Supabase OAuth/RLS test was performed
 - An earlier preview tab crashed while loading a second WebGL scene. The entrance now does not mount/download the 3D module before admission; the final locked preview loaded and was verified in a clean tab.
 - Responsive browser checks are not an iOS device simulation. Safari/WebGL, audio, thermal performance and frame rate on a physical iPhone 17 Pro remain unverified. Live Supabase OAuth/RLS remains untested because no backend project exists yet.
 - Published to `https://pond141205.github.io/happy/`; GitHub Actions run `39082918867` completed build and deploy successfully. Verified the live URL in a browser: no demo button/canvas, missing-backend entry stayed locked, no console errors/warnings. The repository contains sample content and public music only; personal media is not uploaded.
+
+## Roof / entrance geometry fixes — 2026-10-18
+
+- Filled the four gaps between the elliptical conservatory dome and rectangular wall footprint with an extruded roof shoulder. It overlaps the glazing and wall tops; no landscape plane was added.
+- Closed Room 1's unused starting doorway with a solid wall and an arched double door. The doorway toward the connecting passage remains open; navigation bounds are unchanged. End walls render from both sides.
+- Removed four additive light planes in Room 1. Their visible triangle edges were causing the broad diagonal bands across the wall/door in the reported screenshot; real scene lighting remains.
+- **88 tests passed**. Three new raycast checks cover roof corners, a 21×33 grid of roof coverage, and the closed entrance versus the open passage. TypeScript, production build, production security guard and 51-asset Pages smoke checks passed.
+- Inspected actual WebGL views from the dome corner, back roof seam, starting door and connecting corridor. The roof has no sky gaps at the corners, the starting door no longer looks into the forest, the diagonal overlay bands are gone, and Room 2 remains visible through the intended passage.
+- Manual developer-only views: `http://127.0.0.1:5173/scripts/scene-check.html`. This standalone harness does not change visitor navigation and is excluded from production; the production check also guards against accidentally publishing it.

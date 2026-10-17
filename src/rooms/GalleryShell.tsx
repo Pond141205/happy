@@ -2,6 +2,7 @@ import { useEffect, useMemo, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Box, Arch, GardenWindow, Conservatory, LeafCloud, BotanicalVines } from './architecture';
+import { archedOutline, galleryEndGeometry } from './conservatoryGeometry';
 
 export function Parquet() {
   const texture = useMemo(() => {
@@ -34,40 +35,26 @@ function Vault() {
   useEffect(() => () => { ceiling.dispose(); ribs.dispose(); }, [ceiling, ribs]);
   return <><mesh geometry={ceiling}><meshStandardMaterial color="#ece5d3" side={THREE.DoubleSide} roughness={.92} /></mesh><mesh geometry={ribs}><meshStandardMaterial color="#c6bca7" roughness={.7} /></mesh></>;
 }
-function AfternoonLight() {
-  const geometry = useMemo(() => {
-    const parts: THREE.BufferGeometry[] = [];
-    for (const z of [-5.7, -2, 2, 5.7]) {
-      const g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute([4.84, 4.9, z - 1, 4.84, 4.9, z + 1, -2.8, .04, z - 1.7, -2.8, .04, z - 3.7], 3));
-      g.setIndex([0, 1, 2, 0, 2, 3]); g.computeVertexNormals(); parts.push(g);
-    }
-    const g = mergeGeometries(parts); parts.forEach(p => p.dispose()); return g;
-  }, []);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  return <mesh geometry={geometry} renderOrder={2}><meshBasicMaterial color="#ffe6ae" transparent opacity={.025} side={THREE.DoubleSide} depthWrite={false} blending={THREE.AdditiveBlending} /></mesh>;
-}
 function EndWall({ z, warm, opening }: { z: number; warm: boolean; opening: boolean }) {
   const geometry = useMemo(() => {
-    const s = new THREE.Shape(); s.moveTo(-5.12, 0);
-    if (opening) { s.lineTo(-1.4, 0); s.lineTo(-1.4, 3.3); s.absarc(0, 3.3, 1.4, Math.PI, 0, true); s.lineTo(1.4, 0); }
-    s.lineTo(5.12, 0); s.lineTo(5.12, 8.4); s.lineTo(-5.12, 8.4); s.closePath();
-    return new THREE.ExtrudeGeometry(s, { depth: .18, bevelEnabled: false, curveSegments: 40 });
+    return galleryEndGeometry(opening);
   }, [opening]);
+  const door = useMemo(() => new THREE.ShapeGeometry(archedOutline(2.8, 4.7), 40), []);
+  useEffect(() => () => door.dispose(), [door]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   const face = z > 0 ? -.13 : .24;
   return <group position={[0, 0, z]}>
-    <mesh geometry={geometry} castShadow receiveShadow><meshStandardMaterial color={warm ? '#293d35' : '#65705a'} roughness={.9} /></mesh>
+    <mesh geometry={geometry} castShadow receiveShadow><meshStandardMaterial color={warm ? '#293d35' : '#65705a'} roughness={.9} side={THREE.DoubleSide} /></mesh>
     {opening && <Arch radius={1.4} spring={3.3} z={face} />}
     {[-1, 1].map(s => <group key={s}><Box at={[s * 3.25, .57, face]} size={[3.55, 1.14, .12]} color="#d8d0bc" /><Box at={[s * 3.25, 1.18, face]} size={[3.55, .09, .17]} color="#eee4ce" /></group>)}
-    {!opening && <GardenWindow position={[0, 1.5, .3]} width={3.3} height={3.8} />}
+    {!opening && <group name="closed-gallery-entry"><mesh geometry={door} position={[0, 0, face - .01]}><meshStandardMaterial color="#35453b" roughness={.65} side={THREE.DoubleSide} /></mesh><Arch radius={1.4} spring={3.3} z={face - .04} /><Box at={[0, 2.15, face - .035]} size={[.025, 4.3, .025]} color="#b79d69" metalness={.7} />{[-1, 1].map(s => <Box key={s} at={[s * .16, 1.5, face - .07]} size={[.035, .28, .055]} color="#cbb17a" metalness={.7} />)}</group>}
   </group>;
 }
 export default function GalleryShell({ children, warm = false }: { children?: ReactNode; warm?: boolean }) {
   const target = useMemo(() => { const o = new THREE.Object3D(); o.position.set(warm ? 0 : -1, warm ? 1.2 : 0, warm ? 0 : -2); return o; }, [warm]);
   return <group name={warm ? 'conservatory-salon' : 'vaulted-memory-hall'}>
-    <Parquet />{!warm && <AfternoonLight />}<Box at={[0, -.08, 0]} size={[10.2, .16, 16.2]} color="#463d30" />
-    <EndWall z={7.92} warm={warm} opening /><EndWall z={-7.98} warm={warm} opening={!warm} />
+    <Parquet /><Box at={[0, -.08, 0]} size={[10.2, .16, 16.2]} color="#463d30" />
+    <EndWall z={7.92} warm={warm} opening={false} /><EndWall z={-7.98} warm={warm} opening={!warm} />
     {[-1, 1].map(side => <group key={side}>
       <Box at={[side * 5.08, 2.75, 0]} size={[.16, 5.5, 16]} color={warm ? '#30473c' : '#65705a'} />
       <Box at={[side * 4.96, .56, 0]} size={[.12, 1.1, 16]} color="#d5cdb9" />

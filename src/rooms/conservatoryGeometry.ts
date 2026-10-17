@@ -21,6 +21,22 @@ export function windowWall(width: number, height: number, openings: readonly Ope
   return new THREE.ExtrudeGeometry(s, { depth: .18, bevelEnabled: false, curveSegments: 32 });
 }
 
+/** Flat roof shoulders seal the rectangular room around the elliptical dome. */
+export function conservatoryRoofGeometry() {
+  const outline = new THREE.Shape();
+  outline.moveTo(-5.2, -8.2); outline.lineTo(5.2, -8.2); outline.lineTo(5.2, 8.2); outline.lineTo(-5.2, 8.2); outline.closePath();
+  const opening = new THREE.Path(); opening.absellipse(0, 0, 5.025, 8.025, 0, Math.PI * 2, true); outline.holes.push(opening);
+  const geometry = new THREE.ExtrudeGeometry(outline, { depth: .16, bevelEnabled: false, curveSegments: 64 });
+  geometry.rotateX(-Math.PI / 2); geometry.translate(0, 5.42, 0); return geometry;
+}
+
+export function galleryEndGeometry(opening: boolean) {
+  const shape = new THREE.Shape(); shape.moveTo(-5.12, 0);
+  if (opening) { shape.lineTo(-1.4, 0); shape.lineTo(-1.4, 3.3); shape.absarc(0, 3.3, 1.4, Math.PI, 0, true); shape.lineTo(1.4, 0); }
+  shape.lineTo(5.12, 0); shape.lineTo(5.12, 8.4); shape.lineTo(-5.12, 8.4); shape.closePath();
+  return new THREE.ExtrudeGeometry(shape, { depth: .18, bevelEnabled: false, curveSegments: 40 });
+}
+
 export function conservatoryGlassGeometry() {
   const parts: THREE.BufferGeometry[] = [];
   for (const side of [-1, 1]) for (const o of SIDE_WINDOWS) {

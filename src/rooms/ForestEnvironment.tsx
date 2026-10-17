@@ -3,14 +3,27 @@ import * as THREE from 'three';
 import { clearOfMuseum, groundHeight, seededRandom } from './forestLayout';
 import ForestTrees from './ForestTrees';
 import { useLoader } from '@react-three/fiber';
-import { mountainBackdropGeometry } from './mountainBackdrop';
+import { mountainBackdropGeometry, FOREST_LAYERS, FOREST_SECTORS, forestLayerHeight } from './mountainBackdrop';
 
 function MountainBackdrop() {
   const source = useLoader(THREE.TextureLoader, `${import.meta.env.BASE_URL}images/environment/mountain-panorama.webp`);
   const geometry = useMemo(mountainBackdropGeometry, []);
-  const texture = useMemo(() => { const t = source.clone(); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.needsUpdate = true; return t; }, [source]);
+  const texture = useMemo(() => { const t = source.clone(); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.MirroredRepeatWrapping; t.needsUpdate = true; return t; }, [source]);
   useEffect(() => () => { geometry.dispose(); texture.dispose(); }, [geometry, texture]);
   return <mesh name="photographic-distant-mountains" geometry={geometry} rotation={[0, Math.PI / 2, 0]} frustumCulled={false}><meshBasicMaterial map={texture} side={THREE.BackSide} depthWrite={false} fog={false} toneMapped={false} /></mesh>;
+}
+function ForestDepthLayers() {
+  const source = useLoader(THREE.TextureLoader, `${import.meta.env.BASE_URL}images/environment/forest-ridges.webp`);
+  const layers = useMemo(() => FOREST_LAYERS.map(layer => {
+    const texture = source.clone(); texture.colorSpace = THREE.SRGBColorSpace; texture.wrapS = THREE.MirroredRepeatWrapping;
+    texture.repeat.set(FOREST_SECTORS, 1 / 3); texture.offset.y = (2 - layer.row) / 3; texture.needsUpdate = true;
+    const height = forestLayerHeight(layer.radius), geometry = new THREE.CylinderGeometry(layer.radius, layer.radius, height, 96, 1, true);
+    return { ...layer, height, texture, geometry };
+  }), [source]);
+  useEffect(() => () => layers.forEach(layer => { layer.texture.dispose(); layer.geometry.dispose(); }), [layers]);
+  return <group name="layered-midground-forest">{layers.map(layer => <mesh key={layer.radius} geometry={layer.geometry} position={[0, layer.bottom + layer.height / 2, 0]} rotation={[0, .37 + layer.row * .61, 0]}>
+    <meshBasicMaterial map={layer.texture} color={layer.tint} side={THREE.BackSide} alphaTest={.12} alphaToCoverage fog={false} toneMapped={false} />
+  </mesh>)}</group>;
 }
 function Ground() {
   const geometry = useMemo(() => {
@@ -56,5 +69,5 @@ function Undergrowth() {
   return <group name="garden-foreground-depth"><mesh geometry={fern}><meshStandardMaterial color="#547347" side={THREE.DoubleSide} roughness={1} /></mesh><instancedMesh ref={rocks} args={[undefined, undefined, 90]} receiveShadow><dodecahedronGeometry args={[1, 1]} /><meshStandardMaterial roughness={.95} /></instancedMesh><instancedMesh ref={shrubs} args={[undefined, undefined, 180]}><icosahedronGeometry args={[1, 2]} /><meshStandardMaterial roughness={1} /></instancedMesh></group>;
 }
 export default function ForestEnvironment() {
-  return <group name="continuous-3d-mountain-forest"><MountainBackdrop /><Ground /><ForestTrees /><Undergrowth /></group>;
+  return <group name="continuous-3d-mountain-forest"><MountainBackdrop /><ForestDepthLayers /><Ground /><ForestTrees /><Undergrowth /></group>;
 }

@@ -1,10 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { mountainBackdropGeometry } from './mountainBackdrop';
+import { mountainBackdropGeometry, panoramaV, FOREST_LAYERS, forestLayerHeight } from './mountainBackdrop';
 import { badtzGeometry } from './badtzModel';
 
 describe('Photographic distant scenery', () => {
+  it('preserves the source aspect in angular space and overlaps three parallax depths', () => {
+    // 90° per photo horizontally, 45° vertically for a 2:1 source.
+    expect(panoramaV(.1) - panoramaV(0)).toBeCloseTo(.1 / (Math.PI / 4));
+    expect(FOREST_LAYERS.map(l => l.radius)).toEqual([76, 125, 195]);
+    const atlas = readFileSync('public/images/environment/forest-ridges.webp');
+    expect(atlas.toString('ascii', 8, 12)).toBe('WEBP'); expect(atlas.length).toBeLessThan(500000);
+    for (const layer of FOREST_LAYERS) {
+      const height = forestLayerHeight(layer.radius);
+      expect((2 * Math.PI * layer.radius / 3) / height).toBeCloseTo(6);
+      expect(layer.bottom + height).toBeGreaterThan(4);
+      expect(layer.bottom).toBeLessThan(-10);
+    }
+  });
   it('uses a low-cost enclosing sphere and finite UVs inside the local panorama', () => {
     const g = mountainBackdropGeometry(), uv = g.getAttribute('uv'); g.computeBoundingSphere();
     expect(g.boundingSphere!.radius).toBeCloseTo(410, 3); expect(g.index!.count / 3).toBeLessThan(5000);

@@ -1,5 +1,15 @@
 # Distant mountain backdrop
 
+## Layered forest update
+
+`forest-ridges.webp`: built-in image generation mode, 2026-10-18. Three transparent ridge cutouts were cropped into equal 1536×256 tiles and assembled as a 1536×768 RGBA atlas (384,028 bytes; about 6 MiB decoded with mipmaps). Top/middle/bottom tiles supply the far/middle/near ridges. Three stationary cylindrical layers at 195/125/76 metres provide relative parallax, using three repeats and the actual 6:1 tile aspect. They do not cast shadows. They are distant scenery, not walkable forest.
+
+The mountain photo now repeats over four 90° sectors with a matching 45° vertical field, replacing the old distorted vertical UV remap. The source is artistic scenery, not a true measured 360° capture; repeated sectors are intentional.
+
+Forest final generation prompt:
+
+> Create a photorealistic game environment texture atlas on a transparent background, landscape aspect ratio 2:1. Three separate horizontal forest ridge cutouts arranged as THREE ROWS with generous transparent space separating rows. Each row spans the full image width. Top row: distant misty blue-green forest-covered rolling hill silhouette, dense tiny individual realistic tree crowns along irregular low ridgeline. Middle row: middle distance sage green deciduous forest ridge with richly textured individual tree canopies. Bottom row: nearer deep green dense mixed woodland ridge, natural realistic foliage, not stylized. All rows have transparent sky ABOVE their irregular treetop edge, solid opaque forest BELOW the edge down to the row bottom, no ground white border, no horizon sky baked in. Each strip has a gently varied but low horizontal profile, height about one fifth of canvas. Soft warm sunset light from left matching a peaceful mountain valley. No buildings, no people, no text, no frames, no mountains with bare rock, no separate isolated trees. Botanical photographic realism. This is a texture sheet for three parallax scenery layers, not a mockup.
+
 `mountain-panorama.webp`: AI-generated landscape, created with the built-in image generation tool on 2026-10-18. No API key or remote runtime service is used. This is scenery, not a personal photograph.
 
 Generated PNG: 1774 × 887. Delivery texture: 2048 × 1024 WebP, 103,732 bytes. Resampling does not add source detail. Decoded RGBA including mipmaps is approximately 10.7 MiB. The image is projected onto a distant sphere with a compressed horizon belt; it is an artistic panorama, not a measured HDR environment or a traversable landscape. Near trees and terrain remain 3D. The wrap seam faces away from the main conservatory view.

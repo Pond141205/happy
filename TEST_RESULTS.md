@@ -102,6 +102,13 @@ No physical mobile-device test or deployed Supabase OAuth/RLS test was performed
 
 ## Mountain panorama, scene loading and Badtz-Maru — 2026-10-18
 
+### Follow-up: middle-distance forest and image proportions
+
+- Corrected mountain UV scale to four 90°×45° photographic sectors, respecting the 2:1 source aspect near the horizon instead of the previous vertical compression. Mirrored repeat avoids abrupt color jumps between adjacent sectors.
+- Added three transparent ridge strips cropped into one 1536×768 atlas, 384,028 bytes / about 6 MiB RGBA with mipmaps. Radius 76/125/195 m and distinct heights/rotation give overlapping parallax depths between close 3D trees and the far panorama. Geometry adds 576 triangles and three meshes; transmission and reflection passes can draw them again. No extra shadow casters or per-frame layer animation.
+- **104 tests passed across 15 files**; TypeScript, production guard, build and **57-asset** Pages smoke passed. New regression checks angular aspect, strip aspect, depth ordering, overlapping heights and atlas transfer budget.
+- Visual QA was interrupted: the existing in-app browser development tab stopped responding to CDP while selecting the mountain-window view. User refresh was requested. Final composed scene appearance and physical iPhone performance remain unverified in this follow-up; the generated source atlas itself was visually inspected.
+
 - Replaced the three distant mountain rings and procedural sky with one photographic-style AI panorama on a 3,968-triangle sphere. The 2048×1024 WebP is 103,732 bytes; estimated decoded RGBA + mipmaps is 10.7 MiB. Nearby terrain and trees retain depth. Generation provenance and final prompt are alongside the asset.
 - Added a loading overlay tied to actual Three.js asset counts, reflection capture and two subsequent warmup frames. Joystick remains paused until ready. A two-animation-frame mount delay lets the overlay paint before synchronous Canvas preparation; no invented timer/percentage marks the scene ready. Optional photos arriving later do not reopen it; stale attempt callbacks are rejected.
 - Rebuilt Badtz-Maru as four merged material meshes with a beveled spiky head outline, half-lidded eyes, a shaped beak and belly/feet. Raycast regression verifies pupils are in front of the face. The topper remains exclusively in Room 2.

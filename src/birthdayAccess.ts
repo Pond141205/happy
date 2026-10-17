@@ -1,6 +1,10 @@
 export type PrivateExperience = { title: string; message: string };
 export type EncryptedExperience = { version: 1; salt: string; iv: string; ciphertext: string };
 const bytes = (value: string) => Uint8Array.from(atob(value), c => c.charCodeAt(0));
+export function normalizeBirthday(code: string) {
+  if (!/^(?:\d{6}|\d{8})$/.test(code)) throw new Error('Invalid birthday format');
+  return code.length === 8 ? code.slice(0, 4) + code.slice(-2) : code;
+}
 export async function decryptExperience(code: string, envelope: EncryptedExperience): Promise<PrivateExperience> {
   if (!/^(?:\d{6}|\d{8})$/.test(code) || envelope.version !== 1) throw new Error('Invalid birthday envelope');
   const material = await crypto.subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveKey']);
@@ -14,6 +18,6 @@ export async function unlockExperience(code: string) {
   const url = import.meta.env.DEV ? '/__local-experience' : `${import.meta.env.BASE_URL}experience.enc.json`;
   const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error('ยังไม่ได้เตรียมรหัสสำหรับเว็บนี้ กรุณาติดต่อเจ้าของ');
-  try { return await decryptExperience(code, await response.json()); }
+  try { return await decryptExperience(normalizeBirthday(code), await response.json()); }
   catch { throw new Error('ลองอีกครั้งนะ วันที่พิเศษของเทอ ✧'); }
 }

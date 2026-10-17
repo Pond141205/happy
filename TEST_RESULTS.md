@@ -149,3 +149,8 @@ No physical mobile-device test or deployed Supabase OAuth/RLS test was performed
 
 - Replaced เธอ with เทอ across runtime copy, accessibility text, loading states and error messages. Removed both Thai intro paragraphs from the entrance. Entry heading now reads กุญแจคือวันเกิดของเทอ. Renamed the ending trigger, invitation, dialog and letter heading to Just one thing, and removed the duplicate invitation eyebrow.
 - Regenerated local/production encrypted envelopes with the new title; decrypted validation confirmed the letter body is unchanged. Source scan found no old pronoun or old ending title in runtime source. TypeScript, production build/security guard and 58-asset smoke passed. Browser entrance snapshot confirms the requested text removal and heading.
+
+## Birthday short/full-year aliases — 2026-10-18
+
+- Normalize DDMMYYYY to DDMMYY before deriving the unlock key, and normalize the package generator identically. Previously accepting input length 8 did not make it equivalent to the six-digit configured key.
+- Six birthday access tests passed, including the same envelope opened with either year format, wrong birthday rejection and malformed aliases. Verified both forms against the actual published envelope without logging the private code/message. TypeScript/build/security guard/58-asset smoke passed.

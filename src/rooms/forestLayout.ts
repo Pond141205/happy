@@ -9,7 +9,7 @@ export function groundHeight(x: number, z: number) {
 }
 export function clearOfMuseum(x: number, z: number, margin = 0) {
   // Room 2 is at this environment's origin; Room 1 and the passage are toward +Z.
-  return !(Math.abs(x) < 6 + margin && z > -9 - margin && z < 29 + margin);
+  return !(Math.abs(x) < 6 + margin && z > -9 - margin && z < 77 + margin);
 }
 export function forestSites(seed = 2818, count = 100): TreeSite[] {
   const random = seededRandom(seed), sites: TreeSite[] = [];

@@ -1,7 +1,7 @@
 import { BIRTHDAY, PASSAGES } from './layout';
 export type Point = { x: number; z: number };
 export function constrainPosition(point: Point, previous?: Point): Point {
-  const result = { x: Math.max(-4.25, Math.min(4.25, point.x)), z: Math.max(-26.5, Math.min(7, point.z)) };
+  const result = { x: Math.max(-4.25, Math.min(4.25, point.x)), z: Math.max(-26.5, Math.min(55, point.z)) };
   for (const middle of PASSAGES) {
     if (result.z < middle + 2.5 && result.z > middle - 2.5 && Math.abs(result.x) > 1.02) {
       if (previous && Math.abs(previous.z - middle) < 2.5) result.x = Math.sign(result.x) * 1.02;

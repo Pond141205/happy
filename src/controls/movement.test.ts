@@ -74,7 +74,7 @@ describe('Joystick movement through the museum', () => {
   it('blocks outside walls and both ends of the experience', () => {
     expect(walk({ x: 0, z: 0 }, { x: 1, y: 0 }, 10).x).toBe(4.25);
     expect(walk({ x: 0, z: 0 }, { x: -1, y: 0 }, 10).x).toBe(-4.25);
-    expect(walk({ x: 0, z: 6 }, { x: 0, y: -1 }, 10).z).toBe(7);
+    expect(walk({ x: 0, z: 54 }, { x: 0, y: -1 }, 10).z).toBe(55);
     expect(walk({ x: 3, z: -24 }, { x: 0, y: 1 }, 10).z).toBe(-26.5);
   });
 });

@@ -13,6 +13,8 @@ const scripts = await Promise.all(files.filter(f => f.endsWith('.js')).map(f => 
 assert(!scripts.join('').includes('ชมเวอร์ชันตัวอย่าง'), 'Development entry must not ship');
 assert(!scripts.join('').includes('Dome corners'), 'Development geometry harness must not ship');
 assert(!(await readdir('dist')).includes('scripts'), 'Do not publish development scripts as site pages');
+assert(!(await readdir('dist')).includes('private-media'), 'Personal photos must never be copied into the public build');
+assert(!scripts.join('').includes('__local-media'), 'Local photo access must be removed from production');
 assert(!files.some(f => f.endsWith('.map')), 'No production source maps');
 assert(!/VITE_.*SERVICE_ROLE/.test(scripts.join('')), 'Never bundle service credentials');
 console.log(`Production checks passed below ${base}: CSP retained, demo entry removed, no source maps.`);

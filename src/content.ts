@@ -27,6 +27,11 @@ export const sample: Exhibition = {
   ],
 };
 
+sample.chapters[0].memories = Array.from({ length: 32 }, (_, i) => {
+  const number = String(i + 1).padStart(2, '0');
+  return { id: `memory-${number}`, title: `ความทรงจำ ${number}`, caption: '', date: `${number} / 32`, kind: 'photo', ...(import.meta.env.DEV ? { path: `local/gallery/full/${number}.webp` } : {}) };
+});
+
 export function safePath(value: unknown): string | undefined {
   if (value === undefined || value === '') return undefined;
   if (typeof value !== 'string' || value.length > 240 || !/^[a-zA-Z0-9_./-]+$/.test(value) || value.startsWith('/') || value.split('/').some(p => p === '..' || p === '.' || p === '')) throw new Error('Invalid private media path');
@@ -37,7 +42,7 @@ export function parseExhibition(value: unknown): Exhibition {
   const v = value as Exhibition;
   if (!v || !Array.isArray(v.chapters) || ![2, 5].includes(v.chapters.length) || typeof v.birthday !== 'string' || !/^\d{8}$/.test(v.birthday)) throw new Error('Invalid exhibition');
   return { birthday: v.birthday, letter: str(v.letter, 12000), ...(v.cakeDecorationPath ? { cakeDecorationPath: safePath(v.cakeDecorationPath) } : {}), chapters: v.chapters.map(c => {
-    if (!c || !/^#[0-9a-f]{6}$/i.test(c.color) || !Array.isArray(c.memories) || c.memories.length > 6) throw new Error('Invalid chapter');
+    if (!c || !/^#[0-9a-f]{6}$/i.test(c.color) || !Array.isArray(c.memories) || c.memories.length > 32) throw new Error('Invalid chapter');
     return { title: str(c.title, 120), english: str(c.english, 120), subtitle: str(c.subtitle, 250), color: c.color, memories: c.memories.map(m => {
       if (!m || !['photo', 'video'].includes(m.kind)) throw new Error('Invalid memory');
       return { id: str(m.id, 80), title: str(m.title, 120), caption: str(m.caption, 3000), date: str(m.date, 80), kind: m.kind, path: safePath(m.path), posterPath: safePath(m.posterPath) };

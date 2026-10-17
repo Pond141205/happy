@@ -1,6 +1,6 @@
 import type { Chapter } from '../content';
 export const ROOM_CENTERS = [0, -20] as const;
-export const CHAPTER_STOPS = ROOM_CENTERS.map(z => z + 6.4);
+export const CHAPTER_STOPS = [54.4, -13.6];
 export const BIRTHDAY = { centerZ: -20, meadowRadius: 1.72, obstacleRadius: 1.9 };
 export const PASSAGES = [-10];
 export function chapterAt(z: number) { return Math.max(0, Math.min(1, Math.floor((8 - z) / 20))); }

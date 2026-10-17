@@ -2,7 +2,7 @@ import { constrainPosition, type Point } from '../rooms/navigation';
 import type { StickVector } from './joystick';
 export type CameraPose = Point & { yaw: number; pitch: number };
 export const WALK_SPEED = 1.65;
-export const INITIAL_POSE: CameraPose = { x: 0, z: 6.4, yaw: 0, pitch: -.055 };
+export const INITIAL_POSE: CameraPose = { x: 0, z: 54.4, yaw: 0, pitch: -.055 };
 
 /** Only a nonzero joystick input can change horizontal camera position. */
 export function stepMovement(position: Point, stick: StickVector, yaw: number, delta: number, enabled: boolean): Point {

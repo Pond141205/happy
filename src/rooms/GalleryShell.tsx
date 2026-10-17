@@ -4,7 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Box, Arch, GardenWindow, Conservatory, LeafCloud, BotanicalVines } from './architecture';
 import { archedOutline, galleryEndGeometry } from './conservatoryGeometry';
 
-export function Parquet() {
+export function Parquet({ length = 16 }: { length?: number }) {
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas'); canvas.width = canvas.height = 1024;
     const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#493727'; ctx.fillRect(0, 0, 1024, 1024);
@@ -18,20 +18,21 @@ export function Parquet() {
         ctx.restore();
       }
     }
-    const t = new THREE.CanvasTexture(canvas); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2.5, 4); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
-  }, []);
+    const t = new THREE.CanvasTexture(canvas); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2.5, length / 4); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+  }, [length]);
   useEffect(() => () => texture.dispose(), [texture]);
-  return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .012, 0]} receiveShadow><planeGeometry args={[10, 16]} /><meshStandardMaterial map={texture} color="#ddd1b9" roughness={.46} metalness={.08} /></mesh>;
+  return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .012, 0]} receiveShadow><planeGeometry args={[10, length]} /><meshStandardMaterial map={texture} color="#ddd1b9" roughness={.46} metalness={.08} /></mesh>;
 }
-function Vault() {
+function Vault({ length }: { length: number }) {
+  const half = length / 2;
   const [ceiling, ribs] = useMemo(() => {
     const positions: number[] = [], indices: number[] = [], parts: THREE.BufferGeometry[] = [];
-    for (let j = 0; j <= 48; j++) { const a = j / 48 * Math.PI; positions.push(5 * Math.cos(a), 5.45 + 2.45 * Math.sin(a), -8, 5 * Math.cos(a), 5.45 + 2.45 * Math.sin(a), 8); if (j < 48) { const i = j * 2; indices.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); } }
+    for (let j = 0; j <= 48; j++) { const a = j / 48 * Math.PI; positions.push(5 * Math.cos(a), 5.45 + 2.45 * Math.sin(a), -half, 5 * Math.cos(a), 5.45 + 2.45 * Math.sin(a), half); if (j < 48) { const i = j * 2; indices.push(i, i + 1, i + 2, i + 1, i + 3, i + 2); } }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); g.setIndex(indices); g.computeVertexNormals();
-    for (const z of [-7.7, -4, 0, 4, 7.7]) { const points = Array.from({ length: 49 }, (_, i) => { const a = i / 48 * Math.PI; return new THREE.Vector3(4.97 * Math.cos(a), 5.43 + 2.43 * Math.sin(a), z); }); parts.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 48, .055, 5)); }
-    for (const a of [.3, .62, .95, 1.28, 1.86, 2.19, 2.52, 2.84]) { const box = new THREE.BoxGeometry(.045, .065, 15.7); box.translate(4.98 * Math.cos(a), 5.43 + 2.43 * Math.sin(a), 0); parts.push(box); }
+    for (const z of Array.from({ length: Math.round(length / 4) + 1 }, (_, i) => -half + .3 + i * (length - .6) / Math.round(length / 4))) { const points = Array.from({ length: 49 }, (_, i) => { const a = i / 48 * Math.PI; return new THREE.Vector3(4.97 * Math.cos(a), 5.43 + 2.43 * Math.sin(a), z); }); parts.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 48, .055, 5)); }
+    for (const a of [.3, .62, .95, 1.28, 1.86, 2.19, 2.52, 2.84]) { const box = new THREE.BoxGeometry(.045, .065, length - .3); box.translate(4.98 * Math.cos(a), 5.43 + 2.43 * Math.sin(a), 0); parts.push(box); }
     const merged = mergeGeometries(parts); parts.forEach(p => p.dispose()); return [g, merged];
-  }, []);
+  }, [length, half]);
   useEffect(() => () => { ceiling.dispose(); ribs.dispose(); }, [ceiling, ribs]);
   return <><mesh geometry={ceiling}><meshStandardMaterial color="#ece5d3" side={THREE.DoubleSide} roughness={.92} /></mesh><mesh geometry={ribs}><meshStandardMaterial color="#c6bca7" roughness={.7} /></mesh></>;
 }
@@ -50,22 +51,24 @@ function EndWall({ z, warm, opening }: { z: number; warm: boolean; opening: bool
     {!opening && <group name="closed-gallery-entry"><mesh geometry={door} position={[0, 0, face - .01]}><meshStandardMaterial color="#35453b" roughness={.65} side={THREE.DoubleSide} /></mesh><Arch radius={1.4} spring={3.3} z={face - .04} /><Box at={[0, 2.15, face - .035]} size={[.025, 4.3, .025]} color="#b79d69" metalness={.7} />{[-1, 1].map(s => <Box key={s} at={[s * .16, 1.5, face - .07]} size={[.035, .28, .055]} color="#cbb17a" metalness={.7} />)}</group>}
   </group>;
 }
-export default function GalleryShell({ children, warm = false }: { children?: ReactNode; warm?: boolean }) {
+export default function GalleryShell({ children, warm = false, length = 16 }: { children?: ReactNode; warm?: boolean; length?: number }) {
+  const half = length / 2, bays = length === 64 ? Array.from({ length: 17 }, (_, i) => -29.35 + i * 3.7) : [-7.6, -4, 0, 4, 7.6];
   const target = useMemo(() => { const o = new THREE.Object3D(); o.position.set(warm ? 0 : -1, warm ? 1.2 : 0, warm ? 0 : -2); return o; }, [warm]);
   return <group name={warm ? 'conservatory-salon' : 'vaulted-memory-hall'}>
-    <Parquet /><Box at={[0, -.08, 0]} size={[10.2, .16, 16.2]} color="#463d30" />
-    <EndWall z={7.92} warm={warm} opening={false} /><EndWall z={-7.98} warm={warm} opening={!warm} />
+    <Parquet length={length} /><Box at={[0, -.08, 0]} size={[10.2, .16, length + .2]} color="#463d30" />
+    <EndWall z={half - .08} warm={warm} opening={false} /><EndWall z={-half + .02} warm={warm} opening={!warm} />
     {[-1, 1].map(side => <group key={side}>
-      <Box at={[side * 5.08, 2.75, 0]} size={[.16, 5.5, 16]} color={warm ? '#30473c' : '#65705a'} />
-      <Box at={[side * 4.96, .56, 0]} size={[.12, 1.1, 16]} color="#d5cdb9" />
-      {[.1, 1.13, 1.23, 5.23, 5.38, 5.5].map((y, i) => <Box key={y} at={[side * (4.9 - (i > 2 ? .04 * (i - 2) : 0)), y, 0]} size={[.16, i > 2 ? .12 : .05, 16]} color="#e7deca" />)}
-      {[-7.6, -4, 0, 4, 7.6].map(z => <group key={z}><Box at={[side * 4.85, 2.9, z]} size={[.23, 4.5, .3]} color="#d5cebb" /><Box at={[side * 4.78, 1.4, z]} size={[.34, .3, .43]} color="#e9dfc8" /><Box at={[side * 4.78, 5.05, z]} size={[.37, .27, .53]} color="#e9dfc8" /></group>)}
-      {warm ? [-5.7, -2, 2, 5.7].map(z => <GardenWindow key={z} position={[side * 4.96, 1.6, z]} rotation={side * -Math.PI / 2} width={2.2} height={3.25} />) : [-5.7, -2, 2, 5.7].map(z => <group key={z} position={[side * 4.89, 4.58, z]} rotation={[0, side * -Math.PI / 2, 0]}><Box at={[0, 0, -.025]} size={[2.45, .82, .045]} color="#d9cbb0" /><mesh><planeGeometry args={[2.3, .67]} /><meshBasicMaterial color="#f7e8c3" /></mesh><Box at={[0, 0, .015]} size={[.04, .67, .04]} color="#8e8164" /></group>)}
+      <Box at={[side * 5.08, 2.75, 0]} size={[.16, 5.5, length]} color={warm ? '#30473c' : '#65705a'} />
+      <Box at={[side * 4.96, .56, 0]} size={[.12, 1.1, length]} color="#d5cdb9" />
+      {[.1, 1.13, 1.23, 5.23, 5.38, 5.5].map((y, i) => <Box key={y} at={[side * (4.9 - (i > 2 ? .04 * (i - 2) : 0)), y, 0]} size={[.16, i > 2 ? .12 : .05, length]} color="#e7deca" />)}
+      {bays.map(z => <group key={z}><Box at={[side * 4.85, 2.9, z]} size={[.23, 4.5, .3]} color="#d5cebb" /><Box at={[side * 4.78, 1.4, z]} size={[.34, .3, .43]} color="#e9dfc8" /><Box at={[side * 4.78, 5.05, z]} size={[.37, .27, .53]} color="#e9dfc8" /></group>)}
+      {warm ? [-5.7, -2, 2, 5.7].map(z => <GardenWindow key={z} position={[side * 4.96, 1.6, z]} rotation={side * -Math.PI / 2} width={2.2} height={3.25} />) : bays.slice(0, -1).map(z => z + 1.85).map(z => <group key={z} position={[side * 4.89, 4.58, z]} rotation={[0, side * -Math.PI / 2, 0]}><Box at={[0, 0, -.025]} size={[2.45, .82, .045]} color="#d9cbb0" /><mesh><planeGeometry args={[2.3, .67]} /><meshBasicMaterial color="#f7e8c3" /></mesh><Box at={[0, 0, .015]} size={[.04, .67, .04]} color="#8e8164" /></group>)}
     </group>)}
-    {warm ? <><Conservatory /><BotanicalVines /><LeafCloud wall />{[-1, 1].map(s => [-6, -2, 2, 6].map(z => <mesh key={`${s}-${z}`} position={[s * 4.65, .27, z]}><cylinderGeometry args={[.32, .24, .52, 12]} /><meshStandardMaterial color="#a6987e" roughness={.8} /></mesh>))}</> : <><Vault /><Box at={[0, .02, 0]} size={[.018, .004, 15.8]} color="#bba36c" metalness={.7} /><group position={[-3.65, 0, .05]}><Box at={[0, .51, 0]} size={[.72, .16, 2.4]} color="#736043" />{[-.85, .85].map(z => <Box key={z} at={[0, .25, z]} size={[.53, .5, .1]} color="#3d3c31" metalness={.3} />)}<Box at={[0, .615, 0]} size={[.68, .075, 2.32]} color="#ac9d78" /></group></>}
+    {warm ? <><Conservatory /><BotanicalVines /><LeafCloud wall />{[-1, 1].map(s => [-6, -2, 2, 6].map(z => <mesh key={`${s}-${z}`} position={[s * 4.65, .27, z]}><cylinderGeometry args={[.32, .24, .52, 12]} /><meshStandardMaterial color="#a6987e" roughness={.8} /></mesh>))}</> : <><Vault length={length} /><Box at={[0, .02, 0]} size={[.018, .004, length - .2]} color="#bba36c" metalness={.7} /><group position={[-3.65, 0, .05]}><Box at={[0, .51, 0]} size={[.72, .16, 2.4]} color="#736043" />{[-.85, .85].map(z => <Box key={z} at={[0, .25, z]} size={[.53, .5, .1]} color="#3d3c31" metalness={.3} />)}<Box at={[0, .615, 0]} size={[.68, .075, 2.32]} color="#ac9d78" /></group></>}
     <primitive object={target} /><spotLight position={warm ? [1.8, 6, 2] : [4.3, 5.4, 2.8]} target={target} angle={warm ? .68 : .8} penumbra={.65} intensity={warm ? 100 : 155} distance={22} color={warm ? '#ffddb0' : '#ffe1a0'} castShadow shadow-mapSize={[1024, 1024]} shadow-bias={-.0005} shadow-normalBias={.035} />
     <pointLight position={[0, 4.8, -5]} intensity={warm ? 18 : 26} distance={13} color={warm ? '#e4ccaa' : '#fff0cc'} />
     {warm && <pointLight position={[0, 5, 0]} intensity={23} distance={14} color="#9daecb" />}
+    {!warm && bays.slice(0, -1).filter((_, i) => i % 4 === 0).map(z => <pointLight key={z} position={[0, 4.9, z + 8]} intensity={35} distance={18} color="#fff0cc" />)}
     {children}
   </group>;
 }

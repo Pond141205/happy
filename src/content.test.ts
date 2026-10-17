@@ -19,7 +19,7 @@ describe('Private content boundary', () => {
   });
   it('enforces media kinds and bounded frame counts', () => {
     const content = structuredClone(sample);
-    content.chapters[0].memories = Array(7).fill(content.chapters[0].memories[0]);
+    content.chapters[0].memories = Array(33).fill(content.chapters[0].memories[0]);
     expect(() => parseExhibition(content)).toThrow();
   });
 });

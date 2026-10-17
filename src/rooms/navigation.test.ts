@@ -6,7 +6,7 @@ describe('constrainPosition', () => {
     expect(constrainPosition({ x: -4, z: 3 })).toEqual({ x: -4, z: 3 });
   });
   it('clamps outside boundaries', () => {
-    expect(constrainPosition({ x: 100, z: 100 })).toEqual({ x: 4.25, z: 7 });
+    expect(constrainPosition({ x: 100, z: 100 })).toEqual({ x: 4.25, z: 55 });
     expect(constrainPosition({ x: -100, z: -100 })).toEqual({ x: -4.25, z: -26.5 });
   });
   it('keeps passage movement within its narrow walls', () => {

@@ -21,8 +21,8 @@ function Block({ position, size, color, metalness = 0 }: { position: [number, nu
   return <mesh position={position}><boxGeometry args={size} /><meshStandardMaterial color={color} roughness={0.75} metalness={metalness} /></mesh>;
 }
 function textTexture(text: string, sub: string, color: string, dark = false) {
-  const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 768;
-  const ctx = canvas.getContext('2d')!;
+  const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 192;
+  const ctx = canvas.getContext('2d')!; ctx.scale(.25, .25);
   ctx.fillStyle = dark ? '#243638' : '#e6dfd1'; ctx.fillRect(0, 0, 1024, 768);
   ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.strokeRect(48, 48, 928, 672);
   ctx.globalAlpha = 0.45; ctx.beginPath(); ctx.arc(512, 340, 126, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
@@ -34,8 +34,8 @@ function textTexture(text: string, sub: string, color: string, dark = false) {
 function Frame({ memory, number, color, position, rotation, enabled, onMemory }: { memory: Memory; number: number; color: string; position: [number, number, number]; rotation: number; enabled: boolean; onMemory: Props['onMemory'] }) {
   const [hovered, setHovered] = useState(false);
   const plaque = useMemo(() => {
-    const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 144;
-    const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#ece6d5'; ctx.fillRect(0, 0, 768, 144);
+    const canvas = document.createElement('canvas'); canvas.width = 384; canvas.height = 72;
+    const ctx = canvas.getContext('2d')!; ctx.scale(.5, .5); ctx.fillStyle = '#ece6d5'; ctx.fillRect(0, 0, 768, 144);
     ctx.fillStyle = '#4c493e'; ctx.textAlign = 'center'; ctx.font = '28px "Noto Sans Thai", sans-serif'; ctx.fillText(memory.title, 384, 62, 710);
     ctx.font = '16px sans-serif'; ctx.fillText(memory.date, 384, 104, 710);
     const t = new THREE.CanvasTexture(canvas); t.colorSpace = THREE.SRGBColorSpace; return t;
@@ -44,7 +44,12 @@ function Frame({ memory, number, color, position, rotation, enabled, onMemory }:
   const fallback = useMemo(() => textTexture(String(number).padStart(2, '0'), memory.kind === 'video' ? 'A MOMENT IN MOTION' : 'A MEMORY BELONGS HERE', color), [number, memory.kind, color]);
   useEffect(() => () => fallback.dispose(), [fallback]);
   const mediaPath = memory.kind === 'photo' ? memory.path : memory.posterPath;
-  const { url } = usePrivateMedia(mediaPath, enabled);
+  const frameRef = useRef<THREE.Group>(null), worldPosition = useMemo(() => new THREE.Vector3(), []);
+  const [nearby, setNearby] = useState(false);
+  const elapsed = useRef(0);
+  useFrame(({ camera }, delta) => { elapsed.current += delta; if (elapsed.current < .5 || !frameRef.current) return; elapsed.current = 0; frameRef.current.getWorldPosition(worldPosition); const distance = camera.position.distanceTo(worldPosition); setNearby(previous => distance < (previous ? 16 : 13)); });
+  const thumbnailPath = import.meta.env.DEV && mediaPath?.startsWith('local/gallery/full/') ? mediaPath.replace('/full/', '/thumb/') : mediaPath;
+  const { url } = usePrivateMedia(thumbnailPath, enabled && nearby);
   const imageUrl = url || (!mediaPath ? `${import.meta.env.BASE_URL}images/${number % 2 ? 'memory-coast' : 'memory-meadow'}.png` : undefined);
   const [photo, setPhoto] = useState<THREE.Texture>();
   useEffect(() => {
@@ -52,24 +57,22 @@ function Frame({ memory, number, color, position, rotation, enabled, onMemory }:
     let active = true; let texture: THREE.Texture | undefined;
     new THREE.TextureLoader().load(imageUrl, t => {
       texture = t; t.colorSpace = THREE.SRGBColorSpace;
-      // Preserve the photograph's aspect ratio with a crop in the frame; the modal shows the full image.
-      const aspect = t.image.width / t.image.height;
-      if (aspect > 3 / 4) { t.repeat.x = (3 / 4) / aspect; t.offset.x = (1 - t.repeat.x) / 2; }
-      else { t.repeat.y = aspect / (3 / 4); t.offset.y = (1 - t.repeat.y) / 2; }
+      // Fit the full photograph inside the mat; never stretch or crop faces.
       if (active) setPhoto(t); else t.dispose();
     });
     return () => { active = false; texture?.dispose(); };
   }, [imageUrl]);
-  return <group position={position} rotation={[0, rotation, 0]}>
+  const aspect = photo ? photo.image.width / photo.image.height : .75;
+  const artWidth = Math.min(2.04, 2.72 * aspect), artHeight = artWidth / aspect;
+  return <group ref={frameRef} position={position} rotation={[0, rotation, 0]}>
     <Block position={[0, 0, -0.04]} size={[2.38, 3.08, 0.14]} color="#493a27" metalness={0.3} />
     <Block position={[0, 0, 0.045]} size={[2.28, 2.98, 0.04]} color="#bb9b61" metalness={0.65} />
     <Block position={[0, 0, 0.068]} size={[2.16, 2.86, 0.025]} color="#e2d6bc" />
     <mesh position={[0, 0, 0.092]} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)} onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); if (enabled && e.delta < 6) onMemory(memory); }}>
-      <planeGeometry args={[2.04, 2.72]} /><meshStandardMaterial map={photo || fallback} roughness={0.8} emissive="#bda36a" emissiveIntensity={hovered && enabled ? .12 : .015} />
+      <planeGeometry args={photo ? [artWidth, artHeight] : [2.04, 2.72]} /><meshStandardMaterial map={photo || fallback} roughness={0.8} emissive="#bda36a" emissiveIntensity={hovered && enabled ? .12 : .015} />
     </mesh>
     <mesh position={[0, -1.8, .055]}><planeGeometry args={[1.2, .225]} /><meshStandardMaterial map={plaque} roughness={1} /></mesh>
     <Block position={[0, 1.8, 0.16]} size={[.95, 0.045, 0.2]} color="#aa915b" metalness={0.7} />
-    <pointLight position={[0, 1.7, 0.7]} color="#ffe2b0" intensity={2.5} distance={3.5} />
   </group>;
 }
 function Navigation(props: Props) {

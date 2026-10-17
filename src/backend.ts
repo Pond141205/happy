@@ -16,6 +16,11 @@ export async function loadExhibition() {
   return parseExhibition(data.content);
 }
 export async function privateBlob(path: string) {
+  if (import.meta.env.DEV && /^local\/gallery\/(thumb|full)\/\d{2}\.webp$/.test(path)) {
+    const response = await fetch(`/__local-media/${path.slice(6)}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Local photo unavailable');
+    return response.blob();
+  }
   if (!backend) throw new Error('ไม่สามารถเปิดไฟล์ได้');
   const { data, error } = await backend.storage.from('memories').download(path);
   if (error || !data) throw new Error('ไม่สามารถเปิดไฟล์ได้ กรุณาลองอีกครั้ง');

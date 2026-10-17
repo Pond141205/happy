@@ -28,7 +28,10 @@ function Frame({ memory, number, position, rotation, enabled, onMemory }: { memo
   const elapsed = useRef(0);
   useFrame(({ camera }, delta) => { elapsed.current += delta; if (elapsed.current < .5 || !frameRef.current) return; elapsed.current = 0; frameRef.current.getWorldPosition(worldPosition); const distance = camera.position.distanceTo(worldPosition); setNearby(previous => distance < (previous ? 16 : 13)); });
   const thumbnailPath = import.meta.env.DEV && mediaPath?.startsWith('local/gallery/full/') ? mediaPath.replace('/full/', '/thumb/') : mediaPath;
-  const { url } = usePrivateMedia(thumbnailPath, enabled && nearby);
+  // All 32 local thumbnails total <1 MB in transfer; keep them visible along the hall.
+  // Remote full-size private media still obeys the distance budget.
+  const localThumbnail = import.meta.env.DEV && thumbnailPath?.startsWith('local/gallery/thumb/');
+  const { url } = usePrivateMedia(thumbnailPath, enabled && (!!localThumbnail || nearby));
   const imageUrl = url || (!mediaPath ? `${import.meta.env.BASE_URL}images/${number % 2 ? 'memory-coast' : 'memory-meadow'}.png` : undefined);
   const [photo, setPhoto] = useState<THREE.Texture>();
   useEffect(() => {
@@ -48,7 +51,7 @@ function Frame({ memory, number, position, rotation, enabled, onMemory }: { memo
     <Block position={[0, 0, 0.045]} size={[2.28, 2.98, 0.04]} color="#bb9b61" metalness={0.65} />
     <Block position={[0, 0, 0.068]} size={[2.16, 2.86, 0.025]} color="#e2d6bc" />
     <mesh position={[0, 0, 0.092]} onPointerOver={() => setHovered(true)} onPointerOut={() => setHovered(false)} onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); if (enabled && e.delta < 6) onMemory(memory); }}>
-      <planeGeometry args={photo ? [artWidth, artHeight] : [2.04, 2.72]} /><meshStandardMaterial map={photo} color={photo ? '#ffffff' : '#e2d6bc'} roughness={0.8} emissive="#bda36a" emissiveIntensity={hovered && enabled ? .12 : .015} />
+      <planeGeometry args={photo ? [artWidth, artHeight] : [2.04, 2.72]} /><meshStandardMaterial key={photo ? 'photo-loaded' : 'empty-mat'} map={photo} color={photo ? '#ffffff' : '#e2d6bc'} roughness={0.8} emissive="#bda36a" emissiveIntensity={hovered && enabled ? .12 : .015} />
     </mesh>
     <Block position={[0, 1.8, 0.16]} size={[.95, 0.045, 0.2]} color="#aa915b" metalness={0.7} />
   </group>;

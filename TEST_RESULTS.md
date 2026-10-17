@@ -129,3 +129,10 @@ No physical mobile-device test or deployed Supabase OAuth/RLS test was performed
 - The nearest 76m scenery ring intersected the extended hall entrance at local z=76, appearing as two forest strips in the solid wall. Moved the ring to 90m; added an extent regression requiring every ridge radius to clear the hall corner plus margin. Door and wall geometry remain intact.
 - Removed physical wall plaques, generated placeholder words/numbers, album captions, detail titles/dates/descriptions and named tray labels. Accessible image names remain for screen readers. Eliminated unused plaque/placeholder canvas textures.
 - 106 tests passed. Actual closed-entrance WebGL view shows a solid wall with no forest strips, no wall plaques and no console errors/warnings. The photo dialog accessibility tree contains only the photo and close button, no visible text captions. Private media remains local and excluded from production.
+
+## Blank photo material fix and text review — 2026-10-18
+
+- The no-caption cleanup removed the previous texture fallback, exposing a Three material transition from no map to map without rebuilding the shader defines. The photo material now remounts when its loaded/empty state changes, so the USE_MAP shader variant is compiled when the async image arrives.
+- All 32 local 512px thumbnails now remain loaded rather than intentionally blanking distant frames; their combined transfer is 735,172 bytes. Full images still load only in the detail dialog, and remote full-size storage media retains distance gating.
+- Actual development gallery wall view shows the photographs instead of white planes; isolated QA console returned no warnings/errors. 106 tests, TypeScript, production build/security guard and 57-asset smoke passed.
+- Exported editable page-by-page text review as local ignored Markdown/TXT, plus 207 source records in JSON including old inactive copy, errors, aria text and source locations. No personal review document is published; exporter preserves an existing Markdown review instead of overwriting edits.

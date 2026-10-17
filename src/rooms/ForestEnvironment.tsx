@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { clearOfMuseum, forestSites, groundHeight, seededRandom } from './forestLayout';
+import { clearOfMuseum, groundHeight, seededRandom } from './forestLayout';
+import ForestTrees from './ForestTrees';
 
 function Mountain({ radius, height, color, seed }: { radius: number; height: number; color: string; seed: number }) {
   const geometry = useMemo(() => {
@@ -46,44 +47,6 @@ function Ground() {
   }, []);
   useEffect(() => () => geometry.dispose(), [geometry]);
   return <mesh geometry={geometry} receiveShadow><meshStandardMaterial vertexColors roughness={1} /></mesh>;
-}
-function ForestTrees() {
-  const foliage = useRef<THREE.InstancedMesh>(null);
-  const sites = useMemo(() => forestSites(), []), perTree = 12;
-  const [branches, cluster] = useMemo(() => {
-    const parts: THREE.BufferGeometry[] = [], cylinder = new THREE.CylinderGeometry(1, 1, 1, 7), dummy = new THREE.Object3D();
-    const up = new THREE.Vector3(0, 1, 0);
-    const branch = (from: THREE.Vector3, to: THREE.Vector3, radius: number) => {
-      const g = cylinder.clone(), direction = to.clone().sub(from); dummy.position.copy(from).add(to).multiplyScalar(.5); dummy.quaternion.setFromUnitVectors(up, direction.clone().normalize()); dummy.scale.set(radius, direction.length(), radius); dummy.updateMatrix(); g.applyMatrix4(dummy.matrix); parts.push(g);
-    };
-    for (const t of sites) {
-      branch(new THREE.Vector3(t.x, t.y, t.z), new THREE.Vector3(t.x + Math.sin(t.phase) * .3, t.y + t.height * .88, t.z), .13 + t.height * .008);
-      for (let j = 0; j < 6; j++) { const a = t.phase + j * 2.399, h = t.height * (.45 + j * .055); branch(new THREE.Vector3(t.x, t.y + h, t.z), new THREE.Vector3(t.x + Math.cos(a) * t.spread * .8, t.y + h + 2, t.z + Math.sin(a) * t.spread * .8), .045 + (6 - j) * .006); }
-    }
-    cylinder.dispose(); const wood = mergeGeometries(parts); parts.forEach(p => p.dispose());
-    // A cluster is actual curved leaf geometry, shared by all tree crowns.
-    const random = seededRandom(124), leafPositions: number[] = [], colors: number[] = [], color = new THREE.Color();
-    for (let i = 0; i < 230; i++) {
-      const a = random() * Math.PI * 2, r = Math.cbrt(random()), y = (random() * 2 - 1) * .7;
-      dummy.position.set(Math.cos(a) * r, y, Math.sin(a) * r); dummy.rotation.set(random() * 3, random() * 6, random() * 3); dummy.scale.setScalar(.07 + random() * .08); dummy.updateMatrix();
-      const leaf = [[0,-.8,0],[-.38,0,0],[0,1,.18],[0,-.8,0],[0,1,.18],[.38,0,0]];
-      color.setHSL(.22 + random() * .06, .3 + random() * .15, .19 + random() * .08);
-      for (const point of leaf) { const v = new THREE.Vector3(...point).applyMatrix4(dummy.matrix); leafPositions.push(v.x, v.y, v.z); colors.push(color.r, color.g, color.b); }
-    }
-    const leaves = new THREE.BufferGeometry(); leaves.setAttribute('position', new THREE.Float32BufferAttribute(leafPositions, 3)); leaves.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); leaves.computeVertexNormals(); return [wood, leaves];
-  }, [sites]);
-  useEffect(() => () => { branches.dispose(); cluster.dispose(); }, [branches, cluster]);
-  useEffect(() => {
-    const mesh = foliage.current!, dummy = new THREE.Object3D(), c = new THREE.Color(); let index = 0;
-    for (const tree of sites) for (let j = 0; j < perTree; j++) {
-      const a = j * 2.399 + tree.phase, ring = j < 9 ? 1 : .52, level = j < 9 ? .72 : .9;
-      dummy.position.set(tree.x + Math.cos(a) * tree.spread * ring, tree.y + tree.height * level + Math.sin(a * 3) * .6, tree.z + Math.sin(a) * tree.spread * ring);
-      dummy.rotation.set(.1 * j, a, .08 * j); dummy.scale.set(tree.spread * .9, tree.spread * .9, tree.spread * .9); dummy.updateMatrix(); mesh.setMatrixAt(index, dummy.matrix);
-      c.setHSL(.22 + (j % 4) * .01, .25, .54 + (j % 5) * .06); mesh.setColorAt(index++, c);
-    }
-    mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; mesh.computeBoundingSphere();
-  }, [sites]);
-  return <group name="spatial-forest-trees"><mesh geometry={branches}><meshStandardMaterial color="#66523c" roughness={1} /></mesh><instancedMesh ref={foliage} args={[cluster, undefined, sites.length * perTree]}><meshStandardMaterial vertexColors side={THREE.DoubleSide} roughness={1} /></instancedMesh></group>;
 }
 function Undergrowth() {
   const rocks = useRef<THREE.InstancedMesh>(null), shrubs = useRef<THREE.InstancedMesh>(null);

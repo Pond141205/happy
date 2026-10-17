@@ -1,0 +1,30 @@
+[
+  {
+    "name": "twigs.webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 110880,
+    "sha256": "4edb112a06ad900d78bf773ac6029d29be47e576b912c11135db1ff764b90296"
+  },
+  {
+    "name": "bark.webp",
+    "width": 256,
+    "height": 1024,
+    "bytes": 40188,
+    "sha256": "4a92530159cf7a61cc40c34aad025359d10961e0ca87ebfcce49770ad8b68ebb"
+  },
+  {
+    "name": "bark-normal.webp",
+    "width": 128,
+    "height": 512,
+    "bytes": 40012,
+    "sha256": "12e6ac07b6d63293caead3d0d8b01c7d12f7c9bd0e2454417b3223cc217a71ef"
+  },
+  {
+    "name": "tree-views.webp",
+    "width": 1024,
+    "height": 1024,
+    "bytes": 224444,
+    "sha256": "158cd933bb55ad51c8ce62fbd9090cbe8520300d68e5d7ed67268fd8bdfaf221"
+  }
+]

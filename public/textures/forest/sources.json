@@ -1,0 +1,26 @@
+{
+  "asset": "Tree Small 02",
+  "author": "Rico Cilliers",
+  "license": "CC0-1.0",
+  "source": "https://polyhaven.com/a/tree_small_02",
+  "licenseUrl": "https://polyhaven.com/license",
+  "derivatives": "Cropped and packed twig alpha/color atlas, cropped bark color/normal, four orthographic tree impostors from the runtime model.",
+  "sources": [
+    {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/tree_small_02/tree_small_02_leaves_diff_1k.png",
+      "sha256": "d3fc48522c76aa1f91076c6b86f302669822ebe4e2acabd67d42c4d57eaa5ba0"
+    },
+    {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/tree_small_02/tree_small_02_leaves_alpha_1k.png",
+      "sha256": "4f143e2dda8a6a572f427ac378b92255d21761e4611de0d26e21816c01aa533b"
+    },
+    {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/tree_small_02/tree_small_02_diff_1k.png",
+      "sha256": "b4306647da19edb4d856926b80ae80663419cba78e008deafe17a82eba70e405"
+    },
+    {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/png/1k/tree_small_02/tree_small_02_nor_gl_1k.png",
+      "sha256": "d1978a02903cc356e3bb7bf84788817e018a2fbab2ed95b8389be367fd3c4656"
+    }
+  ]
+}
